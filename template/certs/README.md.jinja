@@ -20,14 +20,14 @@ The cert covers each SAN entry **exactly** — no wildcards. Each URL the deploy
 
 - `certs.params` — comma-separated SAN list and CN. Single source of truth for what the cert covers. Edit this to change.
 - `certs_generate.sh` — generator. Reads `certs.params` (no args) or accepts `--cn` / `--dns-altnames` / `--output-prefix` to override.
-- `tls.yml` — Traefik file-provider config pointing at the rendered cert/key. Overwritten on every regeneration.
+- `certs.yml` — Traefik file-provider config pointing at the rendered cert/key. Overwritten on every regeneration.
 - `<prefix>/cert.pem`, `<prefix>/key.pem` — the cert pair. Prefix is the first SAN entry (with `*` → `_` if you use wildcards).
 - `certs_install.sh` / `certs_install.bat` — install the cert into the OS trust store so browsers stop warning.
 
 ## Regenerating after changing `certs.params`
 
 ```bash
-rm -rf certs/<old-prefix>/ certs/tls.yml      # delete stale cert/key + tls.yml
+rm -rf certs/<old-prefix>/ certs/certs.yml      # delete stale cert/key + certs.yml
 bash certs/certs_generate.sh                  # regenerate from certs.params
 bash certs/certs_install.sh certs/            # (optional) install into OS trust store
 ```

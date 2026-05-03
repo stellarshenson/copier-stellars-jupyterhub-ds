@@ -21,7 +21,7 @@
 # Creates:
 #   <prefix>/cert.pem   - Certificate
 #   <prefix>/key.pem    - Private key
-#   tls.yml             - Traefik TLS configuration (fixed name; overwritten on regen)
+#   certs.yml             - Traefik TLS configuration (fixed name; overwritten on regen)
 #
 # =============================================================================
 
@@ -51,7 +51,7 @@ Options:
 Creates:
   <script-dir>/<prefix>/cert.pem   - Certificate
   <script-dir>/<prefix>/key.pem    - Private key
-  <script-dir>/tls.yml             - Traefik TLS configuration (fixed name)
+  <script-dir>/certs.yml             - Traefik TLS configuration (fixed name)
 
 Examples:
   ./certs_generate.sh
@@ -124,7 +124,7 @@ if [ -z "$OUTPUT_PREFIX" ]; then
 fi
 
 CERT_DIR="$SCRIPT_DIR/${OUTPUT_PREFIX}"
-TLS_CONFIG="$SCRIPT_DIR/tls.yml"
+TLS_CONFIG="$SCRIPT_DIR/certs.yml"
 
 # Build SAN string with DNS: prefixes
 SAN_STRING=""

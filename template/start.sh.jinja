@@ -1,14 +1,16 @@
 #!/bin/bash
 # Start {{ project_name }} platform
 # Usage: ./start.sh [--refresh]
-#   --refresh   fast-forward stellars-jupyterhub-ds clone to upstream/main
-#               AND pull latest docker images. Without --refresh the script
-#               uses whatever is on disk (after a one-time clone of the
-#               upstream platform on first run).
+#   --refresh   re-download compose.yml from the upstream repo AND
+#               pull latest docker images. Without --refresh the script uses
+#               whatever compose.yml is on disk (downloaded once on
+#               first run if missing).
 #
-# The upstream stellars-jupyterhub-ds/ clone is meant to be read-only. If
-# it has local modifications, start.sh refuses to run regardless of
-# --refresh - revert or upstream the changes first.
+# The upstream platform is consumed as a single compose file pulled from
+# https://raw.githubusercontent.com/stellarshenson/stellars-jupyterhub-ds/main/compose.yml
+# - no full git clone, no submodule. The image stellars/stellars-jupyterhub-ds:latest
+# is pulled from Docker Hub instead of being built locally; the
+# pull_policy is overridden in compose_override.yml.
 
 set -e
 
@@ -29,10 +31,10 @@ if [[ -f .env ]]; then
 fi
 
 # Bootstrap self-signed TLS cert on first run.
-# Traefik's file provider watches certs/ for tls.yml; if it is not present,
+# Traefik's file provider watches certs/ for certs.yml; if it is not present,
 # call certs_generate.sh with no args (sources certs/certs.params for CN +
 # altnames). Skip silently on subsequent runs.
-if [[ ! -f certs/tls.yml ]]; then
+if [[ ! -f certs/certs.yml ]]; then
     if [[ ! -f certs/certs_generate.sh ]]; then
         echo "ERROR: certs/certs_generate.sh not found - cannot bootstrap TLS cert." >&2
         echo "       Re-run 'copier copy --trust' or 'copier update --trust' to render it." >&2
@@ -40,77 +42,25 @@ if [[ ! -f certs/tls.yml ]]; then
     fi
     echo "No TLS cert found in certs/ - generating from certs/certs.params..."
     (cd certs && bash certs_generate.sh)
-    if [[ ! -f certs/tls.yml ]]; then
-        echo "ERROR: cert generation completed but certs/tls.yml was not produced." >&2
+    if [[ ! -f certs/certs.yml ]]; then
+        echo "ERROR: cert generation completed but certs/certs.yml was not produced." >&2
         exit 1
     fi
 fi
 
-# Upstream platform location. Three supported shapes:
-#   1. git    - a regular git clone (default; what we clone if $SUB is missing)
-#   2. submodule - a git submodule of a parent repo (.git is a gitlink file)
-#   3. standalone - operator-placed content with no git tracking at all
-# The overlay treats $SUB as read-only - we never modify its contents, only
-# refresh on --refresh when it is git-managed. Listed in .gitignore so the
-# rendered overlay never tracks its contents.
-SUB="stellars-jupyterhub-ds"
-SUB_URL="https://github.com/stellarshenson/stellars-jupyterhub-ds.git"
-SUB_BRANCH="main"
+# Upstream compose file - downloaded from the platform repo, gitignored locally.
+UPSTREAM_COMPOSE="compose.yml"
+UPSTREAM_COMPOSE_URL="https://raw.githubusercontent.com/stellarshenson/stellars-jupyterhub-ds/main/compose.yml"
 
-# Classify $SUB into one of: git | submodule | standalone | missing.
-sub_kind() {
-    if   [[ ! -d "$SUB"     ]]; then echo missing
-    elif [[ -d "$SUB/.git"  ]]; then echo git
-    elif [[ -f "$SUB/.git"  ]]; then echo submodule
-    else                             echo standalone
+# Download on first run if missing; --refresh re-downloads unconditionally.
+if [[ "$REFRESH" == "1" || ! -f "$UPSTREAM_COMPOSE" ]]; then
+    echo "Fetching $UPSTREAM_COMPOSE from $UPSTREAM_COMPOSE_URL..."
+    if ! curl -fsSL "$UPSTREAM_COMPOSE_URL" -o "$UPSTREAM_COMPOSE.tmp"; then
+        echo "ERROR: failed to download $UPSTREAM_COMPOSE_URL" >&2
+        rm -f "$UPSTREAM_COMPOSE.tmp"
+        exit 1
     fi
-}
-
-# One-time clone on first run if the directory is missing entirely.
-if [[ "$(sub_kind)" == "missing" ]]; then
-    echo "Cloning $SUB (branch $SUB_BRANCH)..."
-    git clone --branch "$SUB_BRANCH" "$SUB_URL" "$SUB"
-fi
-
-# Without --refresh: use whatever is on disk. We do NOT police the upstream
-# tree's working state - operators may legitimately have local modifications
-# (especially in submodule mode where the parent repo tracks a custom commit
-# or a patched build). Only --refresh would mutate the tree, so the dirty-
-# tree guard is gated on that flag below.
-
-# Refresh from upstream only when explicitly asked. Behaviour per shape:
-#   - git       : fetch + rebase onto the configured upstream (origin/main
-#                 by default; respects operator's fork if origin was retargeted)
-#   - submodule : same fetch + rebase inside the submodule, plus a notice
-#                 that the parent repo's submodule pointer needs updating
-#                 separately for the change to be tracked there
-#   - standalone: refresh is meaningless; print a notice and continue
-if [[ "$REFRESH" == "1" ]]; then
-    case "$(sub_kind)" in
-        git|submodule)
-            kind=$(sub_kind)
-            # Only NOW does the dirty-tree guard apply: --refresh would
-            # rebase, which would clobber/conflict with local modifications.
-            if [[ -n "$(git -C "$SUB" status --porcelain)" ]]; then
-                echo "ERROR: $SUB has local modifications; --refresh would overwrite them." >&2
-                echo "       Commit or revert the changes (git -C $SUB checkout .) or omit --refresh to use the tree as-is." >&2
-                git -C "$SUB" status --short >&2
-                exit 1
-            fi
-            upstream=$(git -C "$SUB" rev-parse --abbrev-ref '@{u}' 2>/dev/null || echo "origin/$SUB_BRANCH")
-            remote="${upstream%%/*}"
-            echo "Refreshing $SUB ($kind) - fetch + rebase onto $upstream..."
-            git -C "$SUB" fetch "$remote"
-            git -C "$SUB" rebase "$upstream"
-            if [[ "$kind" == "submodule" ]]; then
-                echo "Note: parent repo's submodule pointer is unchanged; from the parent run:"
-                echo "      git submodule update --remote --rebase $SUB"
-            fi
-            ;;
-        standalone)
-            echo "Note: $SUB is standalone (no git tracking); --refresh has no effect."
-            ;;
-    esac
+    mv "$UPSTREAM_COMPOSE.tmp" "$UPSTREAM_COMPOSE"
 fi
 
 # Build compose command
@@ -118,7 +68,7 @@ COMPOSE_FILES="--env-file env.default"
 if [[ -f .env ]]; then
     COMPOSE_FILES="${COMPOSE_FILES} --env-file .env"
 fi
-COMPOSE_FILES="${COMPOSE_FILES} -f stellars-jupyterhub-ds/compose.yml -f compose_override.yml"
+COMPOSE_FILES="${COMPOSE_FILES} -f $UPSTREAM_COMPOSE -f compose_override.yml"
 {%- if cifs_shared_mount %}
 if [[ "${ENABLE_CIFS}" == "1" ]]; then
     echo "CIFS mount enabled"

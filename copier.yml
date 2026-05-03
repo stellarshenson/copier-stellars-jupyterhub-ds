@@ -1,15 +1,16 @@
 # Copier interview for stellars-jupyterhub-ds deployment overlays.
 #
-# Generates a thin overlay directory that lives alongside a read-only
-# clone of upstream stellars-jupyterhub-ds. The overlay carries:
+# Generates a thin overlay directory that consumes upstream stellars-jupyterhub-ds
+# as a single compose.yml downloaded from raw.githubusercontent.com and the
+# stellars/stellars-jupyterhub-ds:latest image pulled from Docker Hub. The overlay carries:
 #   - compose_override.yml (Traefik wiring + branding env vars)
 #   - branding/ (logo / favicon / icon assets)
 #   - certs/ (self-signed cert scripts, optional)
 #   - env.default / .env (operator settings)
 #   - start.sh / stop.sh
 #
-# Upstream is cloned read-only on first start.sh, so the overlay stays
-# upgradeable: pull new upstream commits without touching this directory.
+# Upstream compose is downloaded on first start.sh and refreshed via
+# `start.sh --refresh`; no full git clone of the upstream repo is involved.
 #
 # Run:
 #   pip install copier
@@ -40,7 +41,7 @@ _tasks:
   # generated there ends up in the diff and would propose overwriting the
   # destination cert with a freshly-keyed one. The `when:` condition is
   # rendered with `_copier_operation` ('copy' or 'update') as a Jinja var.
-  - command: "[ -f certs/tls.yml ] || (cd certs && bash certs_generate.sh)"
+  - command: "[ -f certs/certs.yml ] || (cd certs && bash certs_generate.sh)"
     when: "{{ _copier_operation == 'copy' }}"
   # Branding cleanup: drop a template default when the operator has supplied
   # a replacement. Per-asset (jh_logo / jl_logo / favicon) we recognise two
@@ -93,7 +94,7 @@ _message_after_copy: |2
     ├─ Built-in defaults  (not asked for; edit compose_override.yml to change)
     │  Notebook image         stellars/stellars-jupyterlab-ds:latest
     │  Hub URL prefix         /  (root path)
-    │  Upstream tracking      clone (read-only; refresh via start.sh --refresh)
+    │  Upstream tracking      compose.yml downloaded from raw.githubusercontent.com (refresh via start.sh --refresh)
     │  Toolbar capitalize     enabled  (system name shown in caps)
     │  Idle culler max ext    48 hours
     └─

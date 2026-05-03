@@ -2,13 +2,13 @@
 # first-run bootstrap or invoked manually).
 #
 # Traefik discovers TLS configs in certs/ via its file provider; the
-# generator emits a fixed-name `tls.yml` referencing the cert/key pair
+# generator emits a fixed-name `certs.yml` referencing the cert/key pair
 # inside `certs/<prefix>/`, where <prefix> is derived from the first DNS
 # altname with `*` -> `_` (e.g. "*.localhost" -> "_.localhost").
 #
 # To regenerate after editing the values below:
 #   bash certs/certs_generate.sh
-# tls.yml is overwritten in place; old certs/<prefix>/ stays around and can
+# certs.yml is overwritten in place; old certs/<prefix>/ stays around and can
 # be deleted manually if you want to clean up.
 
 CERTS_CN="{{ cert_common_name }}"

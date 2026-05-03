@@ -24,5 +24,5 @@ Thumbs.db
 certs/*.pem
 certs/**/*.pem
 
-# Upstream platform clone - cloned and refreshed by start.sh, never modified locally
-/stellars-jupyterhub-ds/
+# Upstream platform compose - downloaded and refreshed by start.sh, not edited locally
+/compose.yml

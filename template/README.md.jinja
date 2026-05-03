@@ -66,14 +66,14 @@ Override the env values via `.env` (untracked) if you need to change the routing
   .env                                 # Local overrides (untracked)
   start.sh                             # Start the stack
   stop.sh                              # Stop the stack
-  stellars-jupyterhub-ds/              # Read-only clone of upstream platform
+  compose.yml                          # Upstream platform compose (downloaded by start.sh; gitignored)
 ```
 
 ## First-time Setup
 
 `start.sh` bootstraps everything on first run:
 
-- Clones the upstream platform into `stellars-jupyterhub-ds/` (a plain clone listed in `.gitignore`, **not** a git submodule, treated as read-only)
+- Downloads the upstream platform compose file as `compose.yml` (gitignored; sourced from `https://raw.githubusercontent.com/stellarshenson/stellars-jupyterhub-ds/main/compose.yml`) — no git clone required, the JupyterHub image is pulled from Docker Hub
 - Generates a self-signed TLS cert into `certs/` if none is present, sourcing `CERTS_CN` and `CERTS_DNS_ALTNAMES` from `certs/certs.params` (rendered from your copier answers)
 - Pulls images and starts the stack
 
@@ -93,7 +93,7 @@ bash certs/certs_generate.sh
 bash certs/certs_generate.sh --cn "Custom CN" --dns-altnames "x.example.com,*.example.com"
 ```
 
-If you change `CERTS_DNS_ALTNAMES`, the new cert/key pair goes into a new `certs/<new-prefix>/` directory (prefix is derived from the first altname, with `*` replaced by `_`). The fixed `certs/tls.yml` is overwritten in place. Delete the stale `certs/<old-prefix>/` directory if you want to clean up.
+If you change `CERTS_DNS_ALTNAMES`, the new cert/key pair goes into a new `certs/<new-prefix>/` directory (prefix is derived from the first altname, with `*` replaced by `_`). The fixed `certs/certs.yml` is overwritten in place. Delete the stale `certs/<old-prefix>/` directory if you want to clean up.
 
 To install the generated cert into your OS trust store (so browsers stop warning), use the bundled installer:
 
@@ -113,7 +113,7 @@ The helpers live in [copier-stellars-jupyterhub-ds/extra/certs-installer](https:
 
 ```bash
 ./start.sh           # Start the stack
-./start.sh --refresh # Pull latest upstream stellars-jupyterhub-ds + docker images
+./start.sh --refresh # Re-download compose.yml from upstream + pull latest docker images
 ./stop.sh            # Stop all services
 ```
 

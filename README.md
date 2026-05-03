@@ -142,7 +142,7 @@ my-jupyterhub/
   env.default                          # Default env (tracked)
   .env                                 # Local overrides (gitignored; takes precedence over env.default)
   start.sh / stop.sh                   # First start.sh auto-generates a self-signed cert from certs/certs.params
-  stellars-jupyterhub-ds/              # Upstream platform (cloned read-only on first start)
+  compose.yml                          # Upstream platform compose (downloaded by start.sh on first run; gitignored)
 ```
 
 ## Updating from this template

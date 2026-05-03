@@ -125,9 +125,9 @@ jobs:
 
       - name: Assert idempotent re-render (existing cert is preserved)
         run: |
-          original_mtime=$(stat -c %Y /tmp/render/certs/tls.yml)
+          original_mtime=$(stat -c %Y /tmp/render/certs/certs.yml)
           copier copy --trust --defaults --overwrite ${{ matrix.scenario.data }} "$GITHUB_WORKSPACE" /tmp/render
-          new_mtime=$(stat -c %Y /tmp/render/certs/tls.yml)
+          new_mtime=$(stat -c %Y /tmp/render/certs/certs.yml)
           test "$original_mtime" = "$new_mtime" \
             && echo "OK: cert mtime unchanged across re-render" \
             || (echo "FAIL: cert was regenerated despite already existing" && exit 1)

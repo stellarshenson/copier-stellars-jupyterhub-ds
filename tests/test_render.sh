@@ -37,7 +37,7 @@ skip() { echo "${YELLOW}SKIP${NC}: $*"; }
 # 1. Static file structure
 # ---------------------------------------------------------------------------
 for f in start.sh stop.sh compose_override.yml env.default .env README.md \
-         certs/certs.params certs/certs_generate.sh certs/tls.yml \
+         certs/certs.params certs/certs_generate.sh certs/certs.yml \
          certs/certs_install.sh certs/certs_install.bat certs/README.md \
          .copier-answers.yml; do
     test -f "$f" || fail "$f missing"
@@ -167,9 +167,9 @@ fi
 # ---------------------------------------------------------------------------
 # 8. Volume mounts
 # ---------------------------------------------------------------------------
-grep -F "../certs:/certs:ro" compose_override.yml >/dev/null \
+grep -F "./certs:/certs:ro" compose_override.yml >/dev/null \
     || fail "compose missing certs volume mount"
-grep -F "../branding:/srv/branding:ro" compose_override.yml >/dev/null \
+grep -F "./branding:/srv/branding:ro" compose_override.yml >/dev/null \
     || fail "compose missing branding volume mount"
 ok "both volume mounts present"
 
@@ -221,15 +221,15 @@ fi
 ok "cert folder prefix '$prefix_dir' derived from first altname"
 
 # ---------------------------------------------------------------------------
-# 11. tls.yml internal references resolve
+# 11. certs.yml internal references resolve
 # ---------------------------------------------------------------------------
-grep -F "/certs/$prefix_dir/cert.pem" certs/tls.yml >/dev/null \
-    || fail "tls.yml missing /certs/$prefix_dir/cert.pem"
-grep -F "/certs/$prefix_dir/key.pem" certs/tls.yml >/dev/null \
-    || fail "tls.yml missing /certs/$prefix_dir/key.pem"
-test -f "certs/$prefix_dir/cert.pem" || fail "tls.yml cert path not on disk"
-test -f "certs/$prefix_dir/key.pem"  || fail "tls.yml key path not on disk"
-ok "tls.yml paths resolve to real files"
+grep -F "/certs/$prefix_dir/cert.pem" certs/certs.yml >/dev/null \
+    || fail "certs.yml missing /certs/$prefix_dir/cert.pem"
+grep -F "/certs/$prefix_dir/key.pem" certs/certs.yml >/dev/null \
+    || fail "certs.yml missing /certs/$prefix_dir/key.pem"
+test -f "certs/$prefix_dir/cert.pem" || fail "certs.yml cert path not on disk"
+test -f "certs/$prefix_dir/key.pem"  || fail "certs.yml key path not on disk"
+ok "certs.yml paths resolve to real files"
 
 # ---------------------------------------------------------------------------
 # 12. cert/key pair match

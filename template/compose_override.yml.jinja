@@ -42,7 +42,7 @@ services:
       - "443:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ../certs:/certs:ro
+      - ./certs:/certs:ro
     networks:
       - jupyterhub_network
     labels:
@@ -64,6 +64,10 @@ services:
     restart: unless-stopped
 
   jupyterhub:
+    # Override upstream's `pull_policy: build` - we don't have the Dockerfile
+    # context locally (no upstream clone). Pull stellars/stellars-jupyterhub-ds
+    # from Docker Hub instead.
+    pull_policy: missing
     ports: []
     environment:
       # main settings
@@ -83,7 +87,7 @@ services:
       - JUPYTERLAB_SYSTEM_NAME={{ project_name }}
       - JUPYTERLAB_HEADER_CAPITALIZE_SYSTEM_NAME=1
     volumes:
-      - ../branding:/srv/branding:ro
+      - ./branding:/srv/branding:ro
     networks:
       - jupyterhub_network
     labels:
