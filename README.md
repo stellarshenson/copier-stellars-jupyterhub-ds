@@ -9,9 +9,11 @@ deployment overlay for [stellars-jupyterhub-ds](https://github.com/stellarshenso
 (the upstream JupyterHub platform).
 
 The generated overlay carries only what changes between deployments - branding,
-hostname / TLS, admin user, optional CIFS - and clones the upstream platform
-read-only so deployments stay upgradeable: pull new upstream commits without
-touching your overlay.
+hostname / TLS, admin user, optional CIFS. The upstream platform itself is
+consumed as a single `compose.yml` file downloaded from the upstream repo on
+first run (gitignored, refreshable via `start.sh --refresh`) plus the
+`stellars/stellars-jupyterhub-ds:latest` image pulled from Docker Hub - no
+git clone, no submodule, no Dockerfile build context required locally.
 
 ## Before you start
 
@@ -161,15 +163,19 @@ edits surface as merge prompts.
 
 This is independent from upstream platform updates: `copier update` refreshes
 the overlay from this template repo, while `start.sh --refresh` (in the
-generated overlay) pulls new commits for the upstream `stellars-jupyterhub-ds`
-clone.
+generated overlay) re-downloads the upstream `compose.yml` and pulls the
+latest `stellars/stellars-jupyterhub-ds:latest` image from Docker Hub.
 
 ## What stays in the upstream platform
 
-The `stellars-jupyterhub-ds/` directory is treated as **read-only**: every
-overlay-specific change belongs in this generated directory, not upstream.
 Bug fixes and feature work for the platform itself live in the
 [upstream repo](https://github.com/stellarshenson/stellars-jupyterhub-ds).
+The deployment overlay only carries operator-specific configuration -
+branding, hostnames, TLS, the optional CIFS overlay, and `compose_override.yml`
+- and consumes everything else from upstream as a downloaded `compose.yml`
+plus the published Docker Hub image. To customise platform behaviour, fork
+upstream and have `start.sh` download from your fork (edit
+`UPSTREAM_COMPOSE_URL` in `start.sh`).
 
 ## License
 
