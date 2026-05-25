@@ -14,7 +14,12 @@ COMPOSE_FILES="--env-file env.default"
 if [[ -f .env ]]; then
     COMPOSE_FILES="${COMPOSE_FILES} --env-file .env"
 fi
-COMPOSE_FILES="${COMPOSE_FILES} -f stellars-jupyterhub-ds/compose.yml -f compose_override.yml"
+COMPOSE_FILES="${COMPOSE_FILES} -f compose.yml -f compose_override.yml"
+{%- if cifs_shared_mount %}
+if [[ "${ENABLE_CIFS}" == "1" ]]; then
+    COMPOSE_FILES="${COMPOSE_FILES} -f compose_cifs.yml"
+fi
+{%- endif %}
 
 echo "Stopping {{ project_name }} platform..."
 docker compose ${COMPOSE_FILES} down
