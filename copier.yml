@@ -181,7 +181,7 @@ cert_common_name:
 
 cert_dns_altnames:
   type: str
-  help: "Cert SANs (comma-separated). NO wildcards - we enumerate the exact subdomains we expose. OpenSSL 3.x rejects single-label wildcards like '*.localhost' as TLD-like, and we don't want surprises across browsers / curl / openssl. The list always covers: the configured access URL, the Traefik dashboard subdomain, and the same pair on localhost so the host machine can reach the deployment."
+  help: "Cert SANs (comma-separated). Default enumerates the configured access URL, the Traefik dashboard subdomain, and the localhost-side equivalents so the host machine can reach the deployment. Edit to add or remove names."
   default: "{% if network_addressing == 'ip' %}{{ base_hostname }},{% if jupyterhub_subdomain %}{{ jupyterhub_subdomain }}.localhost,{% endif %}localhost,traefik.localhost{% elif base_hostname == 'localhost' %}{% if jupyterhub_subdomain %}{{ jupyterhub_subdomain }}.localhost,{% endif %}localhost,traefik.localhost{% else %}{% if jupyterhub_subdomain %}{{ jupyterhub_subdomain }}.{{ base_hostname }},{% endif %}{{ base_hostname }},traefik.{{ base_hostname }},{% if jupyterhub_subdomain %}{{ jupyterhub_subdomain }}.localhost,{% endif %}localhost,traefik.localhost{% endif %}"
 
 # ── Authentication ───────────────────────────────────────────────────────────

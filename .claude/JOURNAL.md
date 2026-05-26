@@ -84,3 +84,6 @@ This journal tracks substantive work on documents, diagrams, and documentation c
 
 27. **Task - Release v1.1.1** (v1.1.1): tag the post-v1.1.0 stop.sh + ENABLE_CIFS fix so copier-update consumers pick it up<br>
     **Result**: incremented 1.1.0 -> 1.1.1. Releases commit `00c620c` (entry 26): `stop.sh.jinja` now targets the downloaded `compose.yml` instead of the removed submodule path, and `env.default.jinja` gates the entire `ENABLE_CIFS` line on `cifs_shared_mount`. The fix already sat on `main`, but `copier update` renders from the latest tag, so a patch tag was needed to ship it. Committed, tagged v1.1.1, pushed branch + tag to origin.
+
+28. **Task - Release v1.1.2** (v1.1.2): soften the `cert_dns_altnames` help text<br>
+    **Result**: dropped the "NO wildcards - we enumerate the exact subdomains..." prescription from the copier interview help for `cert_dns_altnames`; new help is neutral ("Default enumerates the configured access URL, the Traefik dashboard subdomain, and the localhost-side equivalents... Edit to add or remove names"). Operator now decides wildcards-or-not without the interview lecturing them on OpenSSL strict-mode rejection of `*.localhost`. Default SAN list itself unchanged - no wildcards added, CI matrix and `tests/test_render.sh` untouched. Bumped 1.1.1 -> 1.1.2, committed, tagged v1.1.2, pushed branch + tag to origin.
