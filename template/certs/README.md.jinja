@@ -9,6 +9,7 @@ Rendered into `certs.params`:
 | Setting | Value |
 |---|---|
 | `CERTS_CN` | `{{ cert_common_name }}` |
+| `CERTS_ORG` | `{{ project_name }}` (sets cert Organization so trust stores label it by the deployment name) |
 | `CERTS_DNS_ALTNAMES` | `{{ cert_dns_altnames }}` |
 | Network addressing | `{{ network_addressing }}` ({% if network_addressing == 'dns' %}DNS hostname; subdomain routing supported{% else %}bare IP; subdomain only applies to localhost-side access{% endif %}) |
 | Base hostname | `{{ base_hostname }}` |

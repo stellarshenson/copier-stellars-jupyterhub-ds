@@ -1,6 +1,6 @@
 [project]
 name = "copier-stellars-jupyterhub-ds"
-version = "1.1.2"
+version = "1.1.3"
 description = "Copier template that scaffolds a thin deployment overlay for stellars-jupyterhub-ds."
 authors = [
     { name = "Stellars Henson", email = "konrad.jelen@gmail.com" },

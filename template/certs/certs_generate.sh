@@ -8,11 +8,17 @@
 #   ./certs_generate.sh --cn <name> --dns-altnames <domains>  # explicit CLI args
 #
 # When invoked with NO arguments, sources certs.params from the same
-# directory and uses CERTS_CN / CERTS_DNS_ALTNAMES / CERTS_OUTPUT_PREFIX.
+# directory and uses CERTS_CN / CERTS_ORG / CERTS_DNS_ALTNAMES / CERTS_OUTPUT_PREFIX.
 # CLI args take precedence and DISABLE the params-file fallback.
 #
 # Options:
 #   --cn <name>                Certificate Common Name (CN)
+#   --org <organization>       Certificate Organization (O). Subject is always
+#                              "/O=<org>/CN=<cn>"; when --org is omitted (or
+#                              CERTS_ORG is empty) ORG defaults to CN so both
+#                              fields are populated and trust stores never
+#                              fall back to a SAN-derived label like
+#                              "localhost"
 #   --dns-altnames <domains>   Comma-separated DNS SANs
 #   --output-prefix <prefix>   Prefix for the cert/key output folder
 #                              (default: CN lowercase, spaces to hyphens)
@@ -38,11 +44,13 @@ Usage:
   certs_generate.sh --cn <name> --dns-altnames <domains>  # explicit CLI args
 
 When invoked with NO arguments, sources certs.params from the same
-directory and uses CERTS_CN / CERTS_DNS_ALTNAMES / CERTS_OUTPUT_PREFIX.
+directory and uses CERTS_CN / CERTS_ORG / CERTS_DNS_ALTNAMES / CERTS_OUTPUT_PREFIX.
 CLI args take precedence and DISABLE the params-file fallback.
 
 Options:
   --cn <name>                Certificate Common Name (CN)
+  --org <organization>       Certificate Organization (O). Subject is always
+                             "/O=<org>/CN=<cn>"; if omitted, ORG defaults to CN.
   --dns-altnames <domains>   Comma-separated DNS SANs
   --output-prefix <prefix>   Prefix for the cert/key output folder
                              (default: CN lowercase, spaces to hyphens)
@@ -62,6 +70,7 @@ EOF
 }
 
 CN=""
+ORG=""
 DNS_ALTNAMES=""
 OUTPUT_PREFIX=""
 
@@ -77,6 +86,7 @@ if [ $# -eq 0 ] && [ -f "$SCRIPT_DIR/certs.params" ]; then
     # shellcheck disable=SC1091
     source "$SCRIPT_DIR/certs.params"
     CN="${CERTS_CN:-}"
+    ORG="${CERTS_ORG:-}"
     DNS_ALTNAMES="${CERTS_DNS_ALTNAMES:-}"
     OUTPUT_PREFIX="${CERTS_OUTPUT_PREFIX:-}"
 fi
@@ -85,6 +95,10 @@ while [[ $# -gt 0 ]]; do
     case $1 in
         --cn)
             CN="$2"
+            shift 2
+            ;;
+        --org)
+            ORG="$2"
             shift 2
             ;;
         --dns-altnames)
@@ -139,17 +153,25 @@ done
 
 mkdir -p "$CERT_DIR"
 
+# Build subject DN. ORG defaults to CN when empty so the subject is always
+# "/O=.../CN=..." - both fields populated, so whichever one the trust store
+# picks for display, it shows a meaningful name (never a SAN-derived "localhost").
+if [ -z "$ORG" ]; then
+    ORG="$CN"
+fi
+SUBJECT="/O=$ORG/CN=$CN"
+
 echo "Generating certificate:"
-echo "  CN:     $CN"
-echo "  SANs:   $DNS_ALTNAMES"
-echo "  Certs:  $CERT_DIR"
-echo "  TLS:    $TLS_CONFIG"
+echo "  Subject: $SUBJECT"
+echo "  SANs:    $DNS_ALTNAMES"
+echo "  Certs:   $CERT_DIR"
+echo "  TLS:     $TLS_CONFIG"
 echo ""
 
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -keyout "$CERT_DIR/key.pem" \
     -out "$CERT_DIR/cert.pem" \
-    -subj "/CN=$CN" \
+    -subj "$SUBJECT" \
     -addext "subjectAltName=$SAN_STRING"
 
 # Generate Traefik TLS configuration

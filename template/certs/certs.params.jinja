@@ -11,5 +11,18 @@
 # certs.yml is overwritten in place; old certs/<prefix>/ stays around and can
 # be deleted manually if you want to clean up.
 
+# Subject CN (Common Name).
 CERTS_CN="{{ cert_common_name }}"
+
+# Subject Organization (O). The subject is always "/O=<org>/CN=<cn>" so trust
+# stores label the cert by the deployment name instead of a SAN-derived
+# fallback (e.g. "localhost"). Empty -> ORG defaults to CN.
+CERTS_ORG="{{ project_name }}"
+
+# Subject Alternative Names (SANs) - comma-separated DNS names.
 CERTS_DNS_ALTNAMES="{{ cert_dns_altnames }}"
+
+# Output prefix - directory name inside certs/ for the generated cert/key pair.
+# Empty -> derived from the first SAN with '*' -> '_'
+# (e.g. "*.lab.example.com" -> "_.lab.example.com").
+CERTS_OUTPUT_PREFIX=""
