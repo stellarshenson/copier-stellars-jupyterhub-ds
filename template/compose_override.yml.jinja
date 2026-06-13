@@ -77,7 +77,7 @@ services:
       - JUPYTERHUB_IDLE_CULLER_ENABLED={% if idle_culler_enabled %}1{% else %}0{% endif %} # culler 0=disabled, 1=enabled
       - JUPYTERHUB_IDLE_CULLER_MAX_EXTENSION=48 # max hours users can extend session
       - JUPYTERHUB_SIGNUP_ENABLED={% if signup_enabled %}1{% else %}0{% endif %} # user self-registration: 0=disabled, 1=enabled
-      - JUPYTERHUB_NOTEBOOK_IMAGE=stellars/stellars-jupyterlab-ds:latest # user container image
+      - JUPYTERHUB_LAB_IMAGE=stellars/stellars-jupyterlab-ds:latest # user container image
       - JUPYTERHUB_TIMEZONE={{ timezone }} # timezone for hub and lab
 
       # branding ({{ project_name }})
