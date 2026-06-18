@@ -108,6 +108,12 @@ services:
       - "traefik.http.routers.duoptimumhub-rtr.entrypoints=websecure"
       - "traefik.http.routers.duoptimumhub-rtr.tls=true"
       - "traefik.http.routers.duoptimumhub-rtr.service=duoptimumhub-svc"
+      # Override the inherited middleware chain to DROP hub-alias-redirect: that
+      # redirect is only correct for the standalone PATH deployment (canonical
+      # /jupyterhub). Here base_url is / so the hub's own paths ARE /hub/* and the
+      # redirect would 302 them to /jupyterhub/* -> 404. Host aliases serve
+      # transparently at /, so only the rate limiter applies.
+      - "traefik.http.routers.duoptimumhub-rtr.middlewares=duoptimumhub-ratelimit"
       - "traefik.http.services.duoptimumhub-svc.loadbalancer.server.scheme=http"
       - "traefik.http.services.duoptimumhub-svc.loadbalancer.server.port=8000"
 
