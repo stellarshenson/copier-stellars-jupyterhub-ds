@@ -2,7 +2,7 @@
 #
 # Generates a thin overlay directory that consumes upstream stellars-jupyterhub-ds
 # as a single compose.yml downloaded from raw.githubusercontent.com and the
-# stellars/stellars-jupyterhub-ds:latest image pulled from Docker Hub. The overlay carries:
+# stellars/duoptimumhub:latest image pulled from Docker Hub. The overlay carries:
 #   - compose_override.yml (Traefik wiring + branding env vars)
 #   - branding/ (logo / favicon / icon assets)
 #   - certs/ (self-signed cert scripts, optional)

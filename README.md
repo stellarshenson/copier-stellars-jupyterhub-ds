@@ -12,7 +12,7 @@ The generated overlay carries only what changes between deployments - branding,
 hostname / TLS, admin user, optional CIFS. The upstream platform itself is
 consumed as a single `compose.yml` file downloaded from the upstream repo on
 first run (gitignored, refreshable via `start.sh --refresh`) plus the
-`stellars/stellars-jupyterhub-ds:latest` image pulled from Docker Hub - no
+`stellars/duoptimumhub:latest` image pulled from Docker Hub - no
 git clone, no submodule, no Dockerfile build context required locally.
 
 ## Before you start
@@ -164,7 +164,7 @@ edits surface as merge prompts.
 This is independent from upstream platform updates: `copier update` refreshes
 the overlay from this template repo, while `start.sh --refresh` (in the
 generated overlay) re-downloads the upstream `compose.yml` and pulls the
-latest `stellars/stellars-jupyterhub-ds:latest` image from Docker Hub.
+latest `stellars/duoptimumhub:latest` image from Docker Hub.
 
 ## What stays in the upstream platform
 

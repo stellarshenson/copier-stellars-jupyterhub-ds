@@ -63,9 +63,9 @@ services:
       - "traefik.http.routers.dashboard.service=api@internal"
     restart: unless-stopped
 
-  jupyterhub:
+  duoptimumhub:
     # Override upstream's `pull_policy: build` - we don't have the Dockerfile
-    # context locally (no upstream clone). Pull stellars/stellars-jupyterhub-ds
+    # context locally (no upstream clone). Pull stellars/duoptimumhub
     # from Docker Hub instead.
     pull_policy: missing
     ports: []
@@ -81,9 +81,10 @@ services:
       - JUPYTERHUB_TIMEZONE={{ timezone }} # timezone for hub and lab
 
       # branding ({{ project_name }})
-      - JUPYTERHUB_LOGO_URI=file:///srv/branding/{{ branding_prefix }}_jh_logo.png
-      - JUPYTERHUB_FAVICON_URI=file:///srv/branding/{{ branding_prefix }}_favicon.ico
-      - JUPYTERHUB_LAB_MAIN_ICON_URI=file:///srv/branding/{{ branding_prefix }}_jl_logo.svg
+      - JUPYTERHUB_BRANDING_STAGE= # environment-stage header badge: DEV/STG/TST/PRD or custom text; empty = no badge
+      - JUPYTERHUB_BRANDING_LOGO_URI=file:///srv/branding/{{ branding_prefix }}_jh_logo.png
+      - JUPYTERHUB_BRANDING_FAVICON_URI=file:///srv/branding/{{ branding_prefix }}_favicon.ico
+      - JUPYTERHUB_BRANDING_LAB_MAIN_ICON_URI=file:///srv/branding/{{ branding_prefix }}_jl_logo.svg
       - JUPYTERLAB_SYSTEM_NAME={{ project_name }}
       - JUPYTERLAB_HEADER_CAPITALIZE_SYSTEM_NAME=1
     volumes:
@@ -96,17 +97,19 @@ services:
       # JupyterHub router. In IP mode the subdomain prefix never applies to
       # the IP itself (IPs can't carry subdomains), so route bare IP plus the
       # localhost subdomain via the regex. In DNS mode keep the standard
-      # subdomain.<base> routing.
+      # subdomain.<base> routing. The hub|jupyterhub|optimumhub|duoptimumhub
+      # subdomains are accepted as transition aliases (base_url is /, so every
+      # host serves transparently) - old URLs keep working until the cutover.
 {%- if network_addressing == 'ip' %}
-      - "traefik.http.routers.jupyterhub-rtr.rule=Host(`${BASE_HOSTNAME}`) || HostRegexp(`^${JUPYTERHUB_PREFIX}(.*\\.)?localhost$`)"
+      - "traefik.http.routers.duoptimumhub-rtr.rule=Host(`${BASE_HOSTNAME}`) || HostRegexp(`^(hub|jupyterhub|optimumhub|duoptimumhub)\\.(.*\\.)?localhost$`) || HostRegexp(`^${JUPYTERHUB_PREFIX}(.*\\.)?localhost$`)"
 {%- else %}
-      - "traefik.http.routers.jupyterhub-rtr.rule=Host(`${JUPYTERHUB_PREFIX}${BASE_HOSTNAME}`) || HostRegexp(`^${JUPYTERHUB_PREFIX}(.*\\.)?localhost$`)"
+      - "traefik.http.routers.duoptimumhub-rtr.rule=Host(`${JUPYTERHUB_PREFIX}${BASE_HOSTNAME}`) || Host(`hub.${BASE_HOSTNAME}`) || Host(`jupyterhub.${BASE_HOSTNAME}`) || Host(`optimumhub.${BASE_HOSTNAME}`) || Host(`duoptimumhub.${BASE_HOSTNAME}`) || HostRegexp(`^(hub|jupyterhub|optimumhub|duoptimumhub)\\.(.*\\.)?localhost$`) || HostRegexp(`^${JUPYTERHUB_PREFIX}(.*\\.)?localhost$`)"
 {%- endif %}
-      - "traefik.http.routers.jupyterhub-rtr.entrypoints=websecure"
-      - "traefik.http.routers.jupyterhub-rtr.tls=true"
-      - "traefik.http.routers.jupyterhub-rtr.service=jupyterhub-svc"
-      - "traefik.http.services.jupyterhub-svc.loadbalancer.server.scheme=http"
-      - "traefik.http.services.jupyterhub-svc.loadbalancer.server.port=8000"
+      - "traefik.http.routers.duoptimumhub-rtr.entrypoints=websecure"
+      - "traefik.http.routers.duoptimumhub-rtr.tls=true"
+      - "traefik.http.routers.duoptimumhub-rtr.service=duoptimumhub-svc"
+      - "traefik.http.services.duoptimumhub-svc.loadbalancer.server.scheme=http"
+      - "traefik.http.services.duoptimumhub-svc.loadbalancer.server.port=8000"
 
   watchtower:
     networks:

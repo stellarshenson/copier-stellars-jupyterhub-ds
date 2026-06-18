@@ -89,7 +89,7 @@ fi
 # ---------------------------------------------------------------------------
 # 3. Compose URIs reference the rendered branding files (consistency)
 # ---------------------------------------------------------------------------
-for var in JUPYTERHUB_LOGO_URI JUPYTERHUB_FAVICON_URI JUPYTERHUB_LAB_MAIN_ICON_URI; do
+for var in JUPYTERHUB_BRANDING_LOGO_URI JUPYTERHUB_BRANDING_FAVICON_URI JUPYTERHUB_BRANDING_LAB_MAIN_ICON_URI; do
     line=$(grep -E "^[[:space:]]*-[[:space:]]*${var}=" compose_override.yml) \
         || fail "compose missing $var"
     uri=$(echo "$line" | sed -E "s/^[[:space:]]*-[[:space:]]*${var}=//")
@@ -99,15 +99,15 @@ for var in JUPYTERHUB_LOGO_URI JUPYTERHUB_FAVICON_URI JUPYTERHUB_LAB_MAIN_ICON_U
         || fail "$var=$uri but branding/$filename does not exist"
     if [[ -n "${EXPECTED_BRANDING_PREFIX:-}" ]]; then
         case "$var" in
-            JUPYTERHUB_LOGO_URI)
+            JUPYTERHUB_BRANDING_LOGO_URI)
                 [[ "$filename" = "${EXPECTED_BRANDING_PREFIX}_jh_logo.png" ]] \
                     || fail "$var filename '$filename' != '${EXPECTED_BRANDING_PREFIX}_jh_logo.png'"
                 ;;
-            JUPYTERHUB_LAB_MAIN_ICON_URI)
+            JUPYTERHUB_BRANDING_LAB_MAIN_ICON_URI)
                 [[ "$filename" = "${EXPECTED_BRANDING_PREFIX}_jl_logo.svg" ]] \
                     || fail "$var filename '$filename' != '${EXPECTED_BRANDING_PREFIX}_jl_logo.svg'"
                 ;;
-            JUPYTERHUB_FAVICON_URI)
+            JUPYTERHUB_BRANDING_FAVICON_URI)
                 [[ "$filename" = "${EXPECTED_BRANDING_PREFIX}_favicon.ico" ]] \
                     || fail "$var filename '$filename' != '${EXPECTED_BRANDING_PREFIX}_favicon.ico'"
                 ;;
