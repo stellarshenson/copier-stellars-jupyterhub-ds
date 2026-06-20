@@ -26,3 +26,6 @@ certs/**/*.pem
 
 # Upstream platform compose - downloaded and refreshed by start.sh, not edited locally
 /compose.yml
+
+# Operator tools - downloaded from GitHub on render, not edited locally
+/tools/

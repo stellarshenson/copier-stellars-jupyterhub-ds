@@ -1,0 +1,3 @@
+[submodule "extra/docker-volume-migrator"]
+	path = extra/docker-volume-migrator
+	url = https://github.com/stellarshenson/docker-volume-migrator.git
