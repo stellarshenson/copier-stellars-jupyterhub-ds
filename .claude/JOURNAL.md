@@ -120,3 +120,6 @@ This journal tracks substantive work on documents, diagrams, and documentation c
 
 39. **Task - start.sh pre-pulls lab + gpuinfo images** (v2.0.0): adapt the upstream `start.sh` change - it now explicitly pulls the user lab image and the new GPU-info sidecar that `docker compose pull` cannot reach<br>
     **Result**: The downloaded `compose.yml` declares the `gpuinfo-nvidia` sidecar behind the `gpuinfo` profile (excluded from a default `compose pull`), and the user lab image is not a compose service at all (the hub spawns it over the docker socket) - so the template's `docker compose pull` missed both, and a fresh deployment's first lab spawn would fail (image absent). `template/start.sh.jinja` now pre-pulls them: on `--refresh`, `compose pull` plus best-effort `docker pull` of `stellars/stellars-jupyterlab-ds:latest` and `stellars/duoptimum-gpuinfo-nvidia:latest`; on a normal run the lab image is pulled only when absent (first-spawn safety), the sidecar stays refresh/GPU-only. Named `LAB_IMAGE`/`GPUINFO_IMAGE` vars; comment ties `LAB_IMAGE` to `JUPYTERHUB_LAB_IMAGE` in `compose_override.yml`. 70 tests pass; defaults render confirms the block.
+
+40. **Task - Release v2.0.1** (v2.0.1): bump patch version<br>
+    **Result**: incremented 2.0.0 -> 2.0.1, committed, tagged v2.0.1, pushed branch and tag to origin.
