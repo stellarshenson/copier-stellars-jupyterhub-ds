@@ -65,7 +65,7 @@ Override the env values via `.env` (untracked) if you need to change the routing
     certs_install.bat                  # Install rendered cert into the OS trust store (Windows)
     certs.params                       # CN + DNS altnames (rendered by copier; editable)
   tools/                               # Operator helpers (downloaded from GitHub on render)
-    docker-volume-migrator/            # Copy Docker volumes across a name-prefix change
+    docker-volume-toolkit/             # Copy Docker volumes across a name-prefix change
   compose_override.yml                 # Branding env vars + local reverse proxy
 {% if cifs_shared_mount -%}
   compose_cifs.yml                     # Optional CIFS NAS mount (enabled via ENABLE_CIFS=1)

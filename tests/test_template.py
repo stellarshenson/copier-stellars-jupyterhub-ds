@@ -145,15 +145,15 @@ def test_structure(rendered):
     assert os.access(d / "certs" / "certs_install.sh", os.X_OK)
 
 
-def test_tools_migrator_downloaded(rendered):
-    """The copier _task fetches docker-volume-migrator into tools/ from GitHub.
+def test_tools_toolkit_downloaded(rendered):
+    """The copier _task fetches docker-volume-toolkit into tools/ from GitHub.
     The task is non-fatal when offline, so skip if the download did not land."""
     d, _ = rendered
-    tool = d / "tools" / "docker-volume-migrator" / "migrate_volumes.py"
+    tool = d / "tools" / "docker-volume-toolkit" / "migrate_volumes.py"
     if not tool.exists():
-        pytest.skip("tools/docker-volume-migrator not downloaded (offline?)")
+        pytest.skip("tools/docker-volume-toolkit not downloaded (offline?)")
     assert os.access(tool, os.X_OK), "migrate_volumes.py not executable"
-    assert (d / "tools" / "docker-volume-migrator" / "README.md").is_file()
+    assert (d / "tools" / "docker-volume-toolkit" / "README.md").is_file()
 
 
 def test_answers_recorded(rendered):

@@ -66,7 +66,7 @@ _tasks:
             echo "Operator-provided ${asset} detected; removed template default $default"
         fi
     done
-  # Fetch the docker-volume-migrator helper into tools/ from GitHub. Operator-side
+  # Fetch the docker-volume-toolkit helper into tools/ from GitHub. Operator-side
   # tool (prefix-to-prefix Docker volume copy - e.g. a COMPOSE_PROJECT_NAME rename
   # or a platform volume-name change). Pulled fresh each render so the deployment
   # gets the latest; non-fatal when offline. Tracked as a submodule under extra/ in
@@ -74,13 +74,13 @@ _tasks:
   - |
     mkdir -p tools
     _dvm_tmp=$(mktemp -d)
-    if curl -fsSL https://github.com/stellarshenson/docker-volume-migrator/archive/refs/heads/main.tar.gz | tar -xz -C "$_dvm_tmp" 2>/dev/null; then
-        rm -rf tools/docker-volume-migrator
-        mv "$_dvm_tmp"/docker-volume-migrator-* tools/docker-volume-migrator
-        chmod +x tools/docker-volume-migrator/migrate_volumes.py 2>/dev/null || true
-        echo "Fetched docker-volume-migrator into tools/docker-volume-migrator"
+    if curl -fsSL https://github.com/stellarshenson/docker-volume-toolkit/archive/refs/heads/main.tar.gz | tar -xz -C "$_dvm_tmp" 2>/dev/null; then
+        rm -rf tools/docker-volume-toolkit
+        mv "$_dvm_tmp"/docker-volume-toolkit-* tools/docker-volume-toolkit
+        chmod +x tools/docker-volume-toolkit/migrate_volumes.py 2>/dev/null || true
+        echo "Fetched docker-volume-toolkit into tools/docker-volume-toolkit"
     else
-        echo "NOTE: could not download docker-volume-migrator (offline?); tools/ left as-is" >&2
+        echo "NOTE: could not download docker-volume-toolkit (offline?); tools/ left as-is" >&2
     fi
     rm -rf "$_dvm_tmp"
 _message_after_copy: |2

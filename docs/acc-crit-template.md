@@ -56,6 +56,12 @@ Copier template that scaffolds a thin deployment overlay for the upstream stella
   - log: 2026-06-20 (v2.0.0)
 - [x] **Dashboard route** - traefik dashboard routes `traefik.<base>` plus `traefik.localhost`
   - log: 2026-06-20 confirmed (v2.0.0)
+- [x] **Namespace constraint** - traefik docker provider scoped to `Label(com.docker.compose.project, ${COMPOSE_PROJECT_NAME:-duoptimum-hub})`; foreign stacks' routers don't leak in (matches base compose default)
+  - log: 2026-06-20 back-ported from live deployment (v2.0.0)
+- [x] **Dashboard toggle** - `--api.dashboard=${TRAEFIK_DASHBOARD_ENABLED:-true}`; host-routed (no basePath) so `false` 404s both UI and API; open by default
+  - log: 2026-06-20 back-ported from live deployment (v2.0.0)
+- [x] **Hub name** - `JUPYTERHUB_HUB_NAME={{ project_name }}` sets the portal brand-icon tooltip + login/signup text (else upstream default)
+  - log: 2026-06-20 back-ported from live deployment (v2.0.0)
 - [x] **No watchtower/networks block** - override declares no watchtower service and no top-level networks block
   - log: 2026-06-20 (v2.0.0)
 
@@ -134,26 +140,26 @@ Copier template that scaffolds a thin deployment overlay for the upstream stella
   - log: 2026-06-20 ported to pytest (v2.0.0)
 - [x] **CI** - validate-template.yml installs `.[test]` and runs pytest on push/PR
   - log: 2026-06-20 simplified from the bash matrix (v2.0.0)
-- [x] **Tools download** - asserts rendered `tools/docker-volume-migrator/migrate_volumes.py` exists + executable; skips when offline
+- [x] **Tools download** - asserts rendered `tools/docker-volume-toolkit/migrate_volumes.py` exists + executable; skips when offline
   - log: 2026-06-20 added with the migrator extraction (v2.0.0)
 
-## Tools download (docker-volume-migrator)
+## Tools download (docker-volume-toolkit)
 
-The volume migrator is its own repo (`stellarshenson/docker-volume-migrator`), tracked as a submodule under `extra/` in this template (not rendered) and downloaded fresh into a rendered deployment's `tools/` folder by a copier `_task`.
+The volume migrator is its own repo (`stellarshenson/docker-volume-toolkit`), tracked as a submodule under `extra/` in this template (not rendered) and downloaded fresh into a rendered deployment's `tools/` folder by a copier `_task`.
 
-- [x] **Standalone repo** - migrator extracted to public `stellarshenson/docker-volume-migrator` (migrate_volumes.py + README + MIT LICENSE)
+- [x] **Standalone repo** - migrator extracted to public `stellarshenson/docker-volume-toolkit` (migrate_volumes.py + README + MIT LICENSE)
   - log: 2026-06-20 created via REST API, pushed (v2.0.0)
-- [x] **Submodule in extra/** - tracked at `extra/docker-volume-migrator`; outside `_subdirectory: template` so never rendered into a deployment
+- [x] **Submodule in extra/** - tracked at `extra/docker-volume-toolkit`; outside `_subdirectory: template` so never rendered into a deployment
   - log: 2026-06-20 replaced the in-tree `extra/volumes-migrator/` dir (v2.0.0)
-- [x] **Download task** - copier `_task` fetches the repo `main` tarball into `tools/docker-volume-migrator` on every render (copy + update)
+- [x] **Download task** - copier `_task` fetches the repo `main` tarball into `tools/docker-volume-toolkit` on every render (copy + update)
   - log: 2026-06-20 implemented + pytest (v2.0.0)
 - [x] **Latest, not pinned** - rendered `tools/` comes from GitHub at render time, independent of the template tag and the submodule pin
   - log: 2026-06-20 (v2.0.0)
-- [x] **Executable** - rendered `tools/docker-volume-migrator/migrate_volumes.py` keeps the executable bit
+- [x] **Executable** - rendered `tools/docker-volume-toolkit/migrate_volumes.py` keeps the executable bit
   - log: 2026-06-20 pytest asserts os.X_OK (v2.0.0)
 - [x] **Gitignored** - rendered `.gitignore` ignores `/tools/` (downloaded, not edited locally)
   - log: 2026-06-20 (v2.0.0)
-- [x] **Structure** - rendered README Structure block lists `tools/docker-volume-migrator`
+- [x] **Structure** - rendered README Structure block lists `tools/docker-volume-toolkit`
   - log: 2026-06-20 (v2.0.0)
 - [x] **Edge: offline** - download failure logs a NOTE and leaves `tools/` as-is; render still exits 0
   - log: 2026-06-20 non-fatal else-branch; pytest skips when absent (v2.0.0)

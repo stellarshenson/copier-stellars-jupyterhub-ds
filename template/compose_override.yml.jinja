@@ -20,10 +20,11 @@
 services:
 
   # Local Traefik: enable TLS on the websecure entrypoint, secure the dashboard
-  # (host routing), global http->https redirect. `command` REPLACES the base
-  # command - it closes the insecure :8080 API and turns on websecure TLS.
-  # Image / ports / cert volume / network / restart are all inherited from the
-  # base, which already mounts the hub-provisioned hub_certs:/certs.
+  # (host routing, toggle via TRAEFIK_DASHBOARD_ENABLED), global http->https
+  # redirect. `command` REPLACES the base command - it closes the insecure :8080
+  # API, turns on websecure TLS, and namespace-scopes the docker provider to this
+  # compose project. Image / ports / cert volume / network / restart are all
+  # inherited from the base, which already mounts the hub-provisioned hub_certs:/certs.
   traefik:
     command:
       # Entrypoints
@@ -36,13 +37,19 @@ services:
       # Docker provider
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
+      # Namespace isolation: read labels ONLY from this compose project, else a
+      # foreign stack's routers (e.g. its Traefik dashboard) leak in. Matches the
+      # base compose default.
+      - "--providers.docker.constraints=Label(`com.docker.compose.project`,`${COMPOSE_PROJECT_NAME:-duoptimum-hub}`)"
 
       # File provider for TLS certificates (hub-provisioned hub_certs volume)
       - "--providers.file.directory=/certs"
       - "--providers.file.watch=true"
 
-      # API and Dashboard
-      - "--api.dashboard=true"
+      # API and Dashboard. Host-routed (no --api.basePath), so
+      # TRAEFIK_DASHBOARD_ENABLED=false disables api@internal entirely and the
+      # dashboard host 404s for both UI and API. Open (true) by default.
+      - "--api.dashboard=${TRAEFIK_DASHBOARD_ENABLED:-true}"
       - "--api.insecure=false"
 
       # TLS configuration
@@ -98,6 +105,7 @@ services:
       - JUPYTERHUB_TIMEZONE={{ timezone }} # timezone for hub and lab
 
       # branding ({{ project_name }})
+      - JUPYTERHUB_HUB_NAME={{ project_name }} # portal brand-icon tooltip + login/signup text (else upstream default)
       - JUPYTERHUB_BRANDING_STAGE= # environment-stage header badge: DEV/STG/TST/PRD or custom text; empty = no badge
       - JUPYTERHUB_BRANDING_LOGO_URI=file:///srv/branding/{{ branding_prefix }}_jh_logo.png
       - JUPYTERHUB_BRANDING_FAVICON_URI=file:///srv/branding/{{ branding_prefix }}_favicon.ico
