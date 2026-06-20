@@ -70,7 +70,7 @@ Covers `anything.lab.example.com` plus the bare `lab.example.com` plus `localhos
 CERTS_DNS_ALTNAMES="*.app.localhost,app.localhost,localhost"
 ```
 
-Then access via `https://hub.app.localhost/`, `https://traefik.app.localhost/`, etc. You'd also need to update `compose_override.yml` Traefik routes and `JUPYTERHUB_PREFIX` in `env.default` / `.env` to use `app.localhost` rather than the default.
+Then access via `https://hub.app.localhost/`, `https://traefik.app.localhost/`, etc. You'd also need to update `compose_override.yml` Traefik routes and `JUPYTERHUB_HOSTNAME_PREFIX` in `env.default` / `.env` to use `app.localhost` rather than the default.
 
 **IP host** — wildcards are not allowed on IP SANs per RFC 5280. Leave the IP as-is and use exact subdomain entries on the localhost side.
 

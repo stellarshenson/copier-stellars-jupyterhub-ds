@@ -5,9 +5,12 @@
 # =============================================================================
 
 volumes:
-  jupyterhub_shared:
+  # Override the base hub_shared volume (mounted at /mnt/shared in the hub) so
+  # its data lives on a remote CIFS/SMB share instead of a local volume. The
+  # key MUST be hub_shared to merge onto the base volume; with no `name:` it
+  # keeps the base's namespaced docker name (${COMPOSE_PROJECT_NAME}_hub_shared).
+  hub_shared:
     driver: local
-    name: ${COMPOSE_PROJECT_NAME:-{{ project_slug }}}_shared
     driver_opts:
       type: cifs
       device: //nas.example.com/share

@@ -14,7 +14,7 @@ Configuration:
 
 - Network addressing: `{{ network_addressing }}` ({% if network_addressing == 'dns' %}DNS hostname{% else %}bare IP{% endif %})
 - `BASE_HOSTNAME={{ base_hostname }}`
-- `JUPYTERHUB_PREFIX={% if jupyterhub_subdomain %}{{ jupyterhub_subdomain }}.{% endif %}`
+- `JUPYTERHUB_HOSTNAME_PREFIX={% if jupyterhub_subdomain %}{{ jupyterhub_subdomain }}.{% endif %}`
 
 URLs you can hit (all use the bundled self-signed cert; covered SANs are listed in `certs/certs.params`):
 

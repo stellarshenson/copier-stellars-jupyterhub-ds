@@ -1,19 +1,29 @@
 # =============================================================================
 # Compose Override - {{ project_name }}
-# Local Traefik with self-signed certificates and {{ project_name }} branding.
 # =============================================================================
+# DELTAS ONLY. Everything else is inherited from the upstream compose.yml and
+# NOT repeated here: hub image / volumes / ports / healthcheck, the
+# duoptimum-hub-svc + -ratelimit middleware, hub_network / hub_gpuinfo_network,
+# watchtower. Compose merges labels + environment by key (repeat the exact key
+# to change a base value); `command` is replaced wholesale.
 #
 # PORTS:  80 (HTTP -> redirects to 443)  |  443 (HTTPS)
-# CERT:   Self-signed cert in ./certs/
-# ACCESS: https://${JUPYTERHUB_PREFIX}${BASE_HOSTNAME}/
+# CERT:   self-signed cert in ./certs/ -> the hub provisions it from
+#         /user-certs into the shared hub_certs volume that Traefik watches.
+#         Traefik does NOT bind-mount ./certs directly (base mount, inherited).
+# ACCESS: https://${JUPYTERHUB_HOSTNAME_PREFIX}${BASE_HOSTNAME}/
 #
-# Set BASE_HOSTNAME and JUPYTERHUB_PREFIX in .env.
+# Set BASE_HOSTNAME and JUPYTERHUB_HOSTNAME_PREFIX in .env.
 # =============================================================================
 
 services:
 
+  # Local Traefik: enable TLS on the websecure entrypoint, secure the dashboard
+  # (host routing), global http->https redirect. `command` REPLACES the base
+  # command - it closes the insecure :8080 API and turns on websecure TLS.
+  # Image / ports / cert volume / network / restart are all inherited from the
+  # base, which already mounts the hub-provisioned hub_certs:/certs.
   traefik:
-    image: traefik:latest
     command:
       # Entrypoints
       - "--entrypoints.web.address=:80"
@@ -24,7 +34,7 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
 
-      # File provider for TLS certificates
+      # File provider for TLS certificates (hub-provisioned hub_certs volume)
       - "--providers.file.directory=/certs"
       - "--providers.file.watch=true"
 
@@ -37,14 +47,6 @@ services:
 
       # Logging
       - "--log.level=INFO"
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./certs:/certs:ro
-    networks:
-      - jupyterhub_network
     labels:
       - "traefik.enable=true"
 
@@ -61,21 +63,20 @@ services:
       - "traefik.http.routers.dashboard.entrypoints=websecure"
       - "traefik.http.routers.dashboard.tls=true"
       - "traefik.http.routers.dashboard.service=api@internal"
-    restart: unless-stopped
 
-  duoptimumhub:
+  duoptimum-hub:
     # Override upstream's `pull_policy: build` - we don't have the Dockerfile
-    # context locally (no upstream clone). Pull stellars/duoptimumhub
-    # from Docker Hub instead.
+    # context locally (no upstream clone). Pull stellars/duoptimum-hub:latest
+    # from Docker Hub instead. Network / ports / volumes (hub_certs, hub_data,
+    # hub_shared, hub_docker, ./certs:/user-certs) are inherited from the base.
     pull_policy: missing
-    ports: []
     environment:
       # main settings
       - JUPYTERHUB_BASE_URL=/
       - JUPYTERHUB_ADMIN={{ admin_username }} # initial admin username
       - JUPYTERHUB_ADMIN_PASSWORD=${JUPYTERHUB_ADMIN_PASSWORD:-} # optional INITIAL admin password from .env; ignored once admin sets one in the UI
       - JUPYTERHUB_IDLE_CULLER_ENABLED={% if idle_culler_enabled %}1{% else %}0{% endif %} # culler 0=disabled, 1=enabled
-      - JUPYTERHUB_IDLE_CULLER_MAX_EXTENSION=48 # max hours users can extend session
+      - JUPYTERHUB_IDLE_CULLER_MAX_EXTENSION_MINUTES=2880 # max minutes users can extend a session (2880 = 48h)
       - JUPYTERHUB_SIGNUP_ENABLED={% if signup_enabled %}1{% else %}0{% endif %} # user self-registration: 0=disabled, 1=enabled
       - JUPYTERHUB_LAB_IMAGE=stellars/stellars-jupyterlab-ds:latest # user container image
       - JUPYTERHUB_TIMEZONE={{ timezone }} # timezone for hub and lab
@@ -89,40 +90,31 @@ services:
       - JUPYTERLAB_HEADER_CAPITALIZE_SYSTEM_NAME=1
     volumes:
       - ./branding:/srv/branding:ro
-    networks:
-      - jupyterhub_network
     labels:
       - "traefik.enable=true"
 
-      # JupyterHub router. In IP mode the subdomain prefix never applies to
-      # the IP itself (IPs can't carry subdomains), so route bare IP plus the
-      # localhost subdomain via the regex. In DNS mode keep the standard
-      # subdomain.<base> routing. The hub|jupyterhub|optimumhub|duoptimumhub
-      # subdomains are accepted as transition aliases (base_url is /, so every
-      # host serves transparently) - old URLs keep working until the cutover.
+      # JupyterHub router. base_url is / here, so every accepted host serves the
+      # hub transparently at the root. In IP mode the subdomain prefix never
+      # applies to the IP itself (IPs can't carry subdomains), so route the bare
+      # IP plus the localhost subdomain via the regex. In DNS mode keep the
+      # standard subdomain.<base> routing. The hub|jupyterhub|duoptimum-hub
+      # subdomains are accepted as aliases (base_url is /, so every host serves
+      # transparently) - old URLs keep working.
 {%- if network_addressing == 'ip' %}
-      - "traefik.http.routers.duoptimumhub-rtr.rule=Host(`${BASE_HOSTNAME}`) || HostRegexp(`^(hub|jupyterhub|optimumhub|duoptimumhub)\\.(.*\\.)?localhost$`) || HostRegexp(`^${JUPYTERHUB_PREFIX}(.*\\.)?localhost$`)"
+      - "traefik.http.routers.duoptimum-hub-rtr.rule=Host(`${BASE_HOSTNAME}`) || HostRegexp(`^(hub|jupyterhub|duoptimum-hub)\\.(.*\\.)?localhost$`) || HostRegexp(`^${JUPYTERHUB_HOSTNAME_PREFIX}(.*\\.)?localhost$`)"
 {%- else %}
-      - "traefik.http.routers.duoptimumhub-rtr.rule=Host(`${JUPYTERHUB_PREFIX}${BASE_HOSTNAME}`) || Host(`hub.${BASE_HOSTNAME}`) || Host(`jupyterhub.${BASE_HOSTNAME}`) || Host(`optimumhub.${BASE_HOSTNAME}`) || Host(`duoptimumhub.${BASE_HOSTNAME}`) || HostRegexp(`^(hub|jupyterhub|optimumhub|duoptimumhub)\\.(.*\\.)?localhost$`) || HostRegexp(`^${JUPYTERHUB_PREFIX}(.*\\.)?localhost$`)"
+      - "traefik.http.routers.duoptimum-hub-rtr.rule=Host(`${JUPYTERHUB_HOSTNAME_PREFIX}${BASE_HOSTNAME}`) || Host(`hub.${BASE_HOSTNAME}`) || Host(`jupyterhub.${BASE_HOSTNAME}`) || Host(`duoptimum-hub.${BASE_HOSTNAME}`) || HostRegexp(`^(hub|jupyterhub|duoptimum-hub)\\.(.*\\.)?localhost$`) || HostRegexp(`^${JUPYTERHUB_HOSTNAME_PREFIX}(.*\\.)?localhost$`)"
 {%- endif %}
-      - "traefik.http.routers.duoptimumhub-rtr.entrypoints=websecure"
-      - "traefik.http.routers.duoptimumhub-rtr.tls=true"
-      - "traefik.http.routers.duoptimumhub-rtr.service=duoptimumhub-svc"
+      - "traefik.http.routers.duoptimum-hub-rtr.entrypoints=websecure"
+      - "traefik.http.routers.duoptimum-hub-rtr.tls=true"
+      - "traefik.http.routers.duoptimum-hub-rtr.service=duoptimum-hub-svc"
       # Override the inherited middleware chain to DROP hub-alias-redirect: that
       # redirect is only correct for the standalone PATH deployment (canonical
       # /jupyterhub). Here base_url is / so the hub's own paths ARE /hub/* and the
       # redirect would 302 them to /jupyterhub/* -> 404. Host aliases serve
       # transparently at /, so only the rate limiter applies.
-      - "traefik.http.routers.duoptimumhub-rtr.middlewares=duoptimumhub-ratelimit"
-      - "traefik.http.services.duoptimumhub-svc.loadbalancer.server.scheme=http"
-      - "traefik.http.services.duoptimumhub-svc.loadbalancer.server.port=8000"
-
-  watchtower:
-    networks:
-      - jupyterhub_network
-
-networks:
-  jupyterhub_network:
-    name: ${COMPOSE_PROJECT_NAME:-jupyterhub}_network  # actual Docker network name namespaced by compose project
+      - "traefik.http.routers.duoptimum-hub-rtr.middlewares=duoptimum-hub-ratelimit"
+      - "traefik.http.services.duoptimum-hub-svc.loadbalancer.server.scheme=http"
+      - "traefik.http.services.duoptimum-hub-svc.loadbalancer.server.port=8000"
 
 # EOF

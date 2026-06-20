@@ -2,7 +2,7 @@
 #
 # Generates a thin overlay directory that consumes upstream stellars-jupyterhub-ds
 # as a single compose.yml downloaded from raw.githubusercontent.com and the
-# stellars/duoptimumhub:latest image pulled from Docker Hub. The overlay carries:
+# stellars/duoptimum-hub:latest image pulled from Docker Hub. The overlay carries:
 #   - compose_override.yml (Traefik wiring + branding env vars)
 #   - branding/ (logo / favicon / icon assets)
 #   - certs/ (self-signed cert scripts, optional)
@@ -167,11 +167,11 @@ jupyterhub_subdomain:
   type: str
   help: |-
     {% if network_addressing == 'dns' -%}
-    Subdomain prefix for the JupyterHub service (e.g. https://jupyterhub.<base_hostname>/). Leave empty to serve at the root host. No trailing dot; copier adds it where needed.
+    Subdomain prefix for the JupyterHub service (e.g. https://hub.<base_hostname>/). Leave empty to serve at the root host. No trailing dot; copier adds it where needed.
     {%- else -%}
-    Subdomain prefix used ONLY for localhost access on the host machine (e.g. https://jupyterhub.localhost/). The IP itself is always the root URL (https://<ip>/) since IPs can't carry subdomains. Leave empty to skip the localhost-subdomain shortcut entirely.
+    Subdomain prefix used ONLY for localhost access on the host machine (e.g. https://hub.localhost/). The IP itself is always the root URL (https://<ip>/) since IPs can't carry subdomains. Leave empty to skip the localhost-subdomain shortcut entirely.
     {%- endif %}
-  default: jupyterhub
+  default: hub
 
 # ── TLS ──────────────────────────────────────────────────────────────────────
 cert_common_name:

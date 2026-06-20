@@ -8,7 +8,7 @@
 #
 # The upstream platform is consumed as a single compose file pulled from
 # https://raw.githubusercontent.com/stellarshenson/stellars-jupyterhub-ds/main/compose.yml
-# - no full git clone, no submodule. The image stellars/duoptimumhub:latest
+# - no full git clone, no submodule. The image stellars/duoptimum-hub:latest
 # is pulled from Docker Hub instead of being built locally; the
 # pull_policy is overridden in compose_override.yml.
 
@@ -86,4 +86,4 @@ fi
 echo "Starting {{ project_name }} platform..."
 docker compose ${COMPOSE_FILES} up -d --no-build
 
-echo "Done. Access: https://${JUPYTERHUB_PREFIX:-{% if jupyterhub_subdomain %}{{ jupyterhub_subdomain }}.{% endif %}}${BASE_HOSTNAME:-{{ base_hostname }}}/"
+echo "Done. Access: https://${JUPYTERHUB_HOSTNAME_PREFIX:-{% if jupyterhub_subdomain %}{{ jupyterhub_subdomain }}.{% endif %}}${BASE_HOSTNAME:-{{ base_hostname }}}/"
