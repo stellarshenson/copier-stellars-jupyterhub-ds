@@ -77,7 +77,7 @@ _tasks:
     if curl -fsSL https://github.com/stellarshenson/docker-volume-toolkit/archive/refs/heads/main.tar.gz | tar -xz -C "$_dvm_tmp" 2>/dev/null; then
         rm -rf tools/docker-volume-toolkit
         mv "$_dvm_tmp"/docker-volume-toolkit-* tools/docker-volume-toolkit
-        chmod +x tools/docker-volume-toolkit/migrate_volumes.py 2>/dev/null || true
+        chmod +x tools/docker-volume-toolkit/docker_volume_toolkit.py 2>/dev/null || true
         echo "Fetched docker-volume-toolkit into tools/docker-volume-toolkit"
     else
         echo "NOTE: could not download docker-volume-toolkit (offline?); tools/ left as-is" >&2

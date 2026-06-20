@@ -140,14 +140,14 @@ Copier template that scaffolds a thin deployment overlay for the upstream stella
   - log: 2026-06-20 ported to pytest (v2.0.0)
 - [x] **CI** - validate-template.yml installs `.[test]` and runs pytest on push/PR
   - log: 2026-06-20 simplified from the bash matrix (v2.0.0)
-- [x] **Tools download** - asserts rendered `tools/docker-volume-toolkit/migrate_volumes.py` exists + executable; skips when offline
+- [x] **Tools download** - asserts rendered `tools/docker-volume-toolkit/docker_volume_toolkit.py` exists + executable; skips when offline
   - log: 2026-06-20 added with the migrator extraction (v2.0.0)
 
 ## Tools download (docker-volume-toolkit)
 
 The volume migrator is its own repo (`stellarshenson/docker-volume-toolkit`), tracked as a submodule under `extra/` in this template (not rendered) and downloaded fresh into a rendered deployment's `tools/` folder by a copier `_task`.
 
-- [x] **Standalone repo** - migrator extracted to public `stellarshenson/docker-volume-toolkit` (migrate_volumes.py + README + MIT LICENSE)
+- [x] **Standalone repo** - migrator extracted to public `stellarshenson/docker-volume-toolkit` (docker_volume_toolkit.py + README + MIT LICENSE)
   - log: 2026-06-20 created via REST API, pushed (v2.0.0)
 - [x] **Submodule in extra/** - tracked at `extra/docker-volume-toolkit`; outside `_subdirectory: template` so never rendered into a deployment
   - log: 2026-06-20 replaced the in-tree `extra/volumes-migrator/` dir (v2.0.0)
@@ -155,7 +155,7 @@ The volume migrator is its own repo (`stellarshenson/docker-volume-toolkit`), tr
   - log: 2026-06-20 implemented + pytest (v2.0.0)
 - [x] **Latest, not pinned** - rendered `tools/` comes from GitHub at render time, independent of the template tag and the submodule pin
   - log: 2026-06-20 (v2.0.0)
-- [x] **Executable** - rendered `tools/docker-volume-toolkit/migrate_volumes.py` keeps the executable bit
+- [x] **Executable** - rendered `tools/docker-volume-toolkit/docker_volume_toolkit.py` keeps the executable bit
   - log: 2026-06-20 pytest asserts os.X_OK (v2.0.0)
 - [x] **Gitignored** - rendered `.gitignore` ignores `/tools/` (downloaded, not edited locally)
   - log: 2026-06-20 (v2.0.0)

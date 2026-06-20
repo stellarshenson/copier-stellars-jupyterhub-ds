@@ -149,10 +149,10 @@ def test_tools_toolkit_downloaded(rendered):
     """The copier _task fetches docker-volume-toolkit into tools/ from GitHub.
     The task is non-fatal when offline, so skip if the download did not land."""
     d, _ = rendered
-    tool = d / "tools" / "docker-volume-toolkit" / "migrate_volumes.py"
+    tool = d / "tools" / "docker-volume-toolkit" / "docker_volume_toolkit.py"
     if not tool.exists():
         pytest.skip("tools/docker-volume-toolkit not downloaded (offline?)")
-    assert os.access(tool, os.X_OK), "migrate_volumes.py not executable"
+    assert os.access(tool, os.X_OK), "docker_volume_toolkit.py not executable"
     assert (d / "tools" / "docker-volume-toolkit" / "README.md").is_file()
 
 
