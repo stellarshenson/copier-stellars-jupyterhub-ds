@@ -76,11 +76,24 @@ if [[ "${ENABLE_CIFS}" == "1" ]]; then
 fi
 {%- endif %}
 
-# Docker image pull is also gated by --refresh; without it, reuse whatever
-# images are already on the host (faster startup, no network round-trip).
+# Image pulls. Without --refresh we reuse whatever is already on the host
+# (faster startup, no network round-trip). `docker compose pull` only covers the
+# compose SERVICES (traefik, hub, watchtower); it misses two images the hub
+# spawns itself over the docker socket - the user lab image (not a compose
+# service) and the GPU-info sidecar (declared behind the `gpuinfo` profile, so
+# excluded from a default pull). Pull those explicitly: the lab image whenever it
+# is absent so the first spawn works, the sidecar best-effort (GPU hosts only,
+# may be unpublished). LAB_IMAGE must match JUPYTERHUB_LAB_IMAGE in compose_override.yml.
+LAB_IMAGE="stellars/stellars-jupyterlab-ds:latest"
+GPUINFO_IMAGE="stellars/duoptimum-gpuinfo-nvidia:latest"
 if [[ "$REFRESH" == "1" ]]; then
     echo "Pulling latest images..."
     docker compose ${COMPOSE_FILES} pull --ignore-pull-failures
+    docker pull "$LAB_IMAGE" || true
+    docker pull "$GPUINFO_IMAGE" || true
+elif ! docker image inspect "$LAB_IMAGE" >/dev/null 2>&1; then
+    echo "Pulling user lab image ($LAB_IMAGE)..."
+    docker pull "$LAB_IMAGE" || true
 fi
 
 echo "Starting {{ project_name }} platform..."
