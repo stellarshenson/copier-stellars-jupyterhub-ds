@@ -123,3 +123,9 @@ This journal tracks substantive work on documents, diagrams, and documentation c
 
 40. **Task - Release v2.0.1** (v2.0.1): bump patch version<br>
     **Result**: incremented 2.0.0 -> 2.0.1, committed, tagged v2.0.1, pushed branch and tag to origin.
+
+41. **Task - Sync override to upstream hub schema** (v2.0.1): operator flagged several live-deployment compose-override architecture changes; adapt the unsynced ones into the template<br>
+    **Result**: Diffed live `local-stellars-tech-lab` (commits 932cb30/0ddfaf3/b445117) vs template - upstream renamed the hub service `duoptimum-hub` -> `hub` and its router/service/middleware to `hub-rtr`/`hub-svc`/`hub-ratelimit`. Renamed all in `compose_override.yml.jinja` - functional, not cosmetic: compose merges labels by key, so only a matching `hub-rtr` key lets the override replace the base Path rule with the Host rule and drop `hub-alias-redirect` from the middleware chain. Added `JUPYTERHUB_BRANDING_LAB_SPLASH_ICON_URI` (new upstream branding key). Left the `${COMPOSE_PROJECT_NAME:-duoptimum-hub}` slug fallback and `stellars/duoptimum-hub:latest` image untouched. Logged in `docs/acc-crit-template.md`. Verified: rendered multi-subdomain/IP/empty configs (messy `hub, JupyterHub , lab,, hub` -> `hub|jupyterhub|lab`); `docker compose config` merge of base+override exits 0 with `hub-rtr.rule` = the Host rule and `middlewares=hub-ratelimit` only.
+
+42. **Task - Release v2.0.2** (v2.0.2): bump patch version<br>
+    **Result**: incremented 2.0.1 -> 2.0.2, committed, tagged v2.0.2, pushed branch and tag to origin.

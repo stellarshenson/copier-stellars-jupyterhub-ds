@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "copier-stellars-jupyterhub-ds"
-version = "2.0.1"
+version = "2.0.2"
 description = "Copier template that scaffolds a thin deployment overlay for stellars-jupyterhub-ds."
 authors = [
     { name = "Stellars Henson", email = "konrad.jelen@gmail.com" },

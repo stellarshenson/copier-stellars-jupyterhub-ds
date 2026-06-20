@@ -52,8 +52,12 @@ Copier template that scaffolds a thin deployment overlay for the upstream stella
   - log: 2026-06-20 (v2.0.0)
 - [x] **Idle culler** - when enabled, `JUPYTERHUB_IDLE_CULLER_MAX_EXTENSION_MINUTES=2880` (48h)
   - log: 2026-06-20 renamed from _EXTENSION hours (v2.0.0)
-- [x] **Middlewares** - hub router middleware chain is `duoptimum-hub-ratelimit` only; hub-alias-redirect dropped (base_url=/)
+- [x] **Hub schema** - hub service block is `hub:`; router/service/middleware are `hub-rtr`/`hub-svc`/`hub-ratelimit` (matches upstream rename); override replaces base `hub-rtr` rule + middleware in place by key
   - log: 2026-06-20 (v2.0.0)
+  - log: 2026-06-21 renamed `duoptimum-hub` -> `hub` to track upstream new schema; key match is what lets the override replace the base Path rule with the Host rule
+- [x] **Middlewares** - hub router middleware chain is `hub-ratelimit` only; hub-alias-redirect dropped (base_url=/)
+  - log: 2026-06-20 (v2.0.0)
+  - log: 2026-06-21 renamed `duoptimum-hub-ratelimit` -> `hub-ratelimit`
 - [x] **Dashboard route** - traefik dashboard routes `traefik.<base>` plus `traefik.localhost`
   - log: 2026-06-20 confirmed (v2.0.0)
 - [x] **Namespace constraint** - traefik docker provider scoped to `Label(com.docker.compose.project, ${COMPOSE_PROJECT_NAME:-duoptimum-hub})`; foreign stacks' routers don't leak in (matches base compose default)
@@ -62,6 +66,8 @@ Copier template that scaffolds a thin deployment overlay for the upstream stella
   - log: 2026-06-20 back-ported from live deployment (v2.0.0)
 - [x] **Hub name** - `JUPYTERHUB_HUB_NAME={{ project_name }}` sets the portal brand-icon tooltip + login/signup text (else upstream default)
   - log: 2026-06-20 back-ported from live deployment (v2.0.0)
+- [x] **Splash icon** - `JUPYTERHUB_BRANDING_LAB_SPLASH_ICON_URI` set to `{{ branding_prefix }}_jl_logo.svg` (matches main lab icon)
+  - log: 2026-06-21 added to track upstream new branding key
 - [x] **No watchtower/networks block** - override declares no watchtower service and no top-level networks block
   - log: 2026-06-20 (v2.0.0)
 

@@ -3,7 +3,7 @@
 # =============================================================================
 # DELTAS ONLY. Everything else is inherited from the upstream compose.yml and
 # NOT repeated here: hub image / volumes / ports / healthcheck, the
-# duoptimum-hub-svc + -ratelimit middleware, hub_network / hub_gpuinfo_network,
+# hub-svc + hub-ratelimit middleware, hub_network / hub_gpuinfo_network,
 # watchtower. Compose merges labels + environment by key (repeat the exact key
 # to change a base value); `command` is replaced wholesale.
 #
@@ -87,7 +87,7 @@ services:
       - "traefik.http.routers.dashboard.tls=true"
       - "traefik.http.routers.dashboard.service=api@internal"
 
-  duoptimum-hub:
+  hub:
     # Override upstream's `pull_policy: build` - we don't have the Dockerfile
     # context locally (no upstream clone). Pull stellars/duoptimum-hub:latest
     # from Docker Hub instead. Network / ports / volumes (hub_certs, hub_data,
@@ -110,6 +110,7 @@ services:
       - JUPYTERHUB_BRANDING_LOGO_URI=file:///srv/branding/{{ branding_prefix }}_jh_logo.png
       - JUPYTERHUB_BRANDING_FAVICON_URI=file:///srv/branding/{{ branding_prefix }}_favicon.ico
       - JUPYTERHUB_BRANDING_LAB_MAIN_ICON_URI=file:///srv/branding/{{ branding_prefix }}_jl_logo.svg
+      - JUPYTERHUB_BRANDING_LAB_SPLASH_ICON_URI=file:///srv/branding/{{ branding_prefix }}_jl_logo.svg
       - JUPYTERLAB_SYSTEM_NAME={{ project_name }}
       - JUPYTERLAB_HEADER_CAPITALIZE_SYSTEM_NAME=1
     volumes:
@@ -125,20 +126,20 @@ services:
       # bare host. In IP mode the bare IP is the root URL and subdomains apply
       # only to the localhost side (IPs can't carry subdomains).
 {%- if network_addressing == 'ip' %}
-      - "traefik.http.routers.duoptimum-hub-rtr.rule=Host(`${BASE_HOSTNAME}`){% for s in subs %} || Host(`{{ s }}.localhost`){% endfor %}"
+      - "traefik.http.routers.hub-rtr.rule=Host(`${BASE_HOSTNAME}`){% for s in subs %} || Host(`{{ s }}.localhost`){% endfor %}"
 {%- else %}
-      - "traefik.http.routers.duoptimum-hub-rtr.rule={% if subs %}{% for s in subs %}Host(`{{ s }}.${BASE_HOSTNAME}`){% if base_hostname != 'localhost' %} || Host(`{{ s }}.localhost`){% endif %}{% if not loop.last %} || {% endif %}{% endfor %}{% else %}Host(`${BASE_HOSTNAME}`){% if base_hostname != 'localhost' %} || Host(`localhost`){% endif %}{% endif %}"
+      - "traefik.http.routers.hub-rtr.rule={% if subs %}{% for s in subs %}Host(`{{ s }}.${BASE_HOSTNAME}`){% if base_hostname != 'localhost' %} || Host(`{{ s }}.localhost`){% endif %}{% if not loop.last %} || {% endif %}{% endfor %}{% else %}Host(`${BASE_HOSTNAME}`){% if base_hostname != 'localhost' %} || Host(`localhost`){% endif %}{% endif %}"
 {%- endif %}
-      - "traefik.http.routers.duoptimum-hub-rtr.entrypoints=websecure"
-      - "traefik.http.routers.duoptimum-hub-rtr.tls=true"
-      - "traefik.http.routers.duoptimum-hub-rtr.service=duoptimum-hub-svc"
+      - "traefik.http.routers.hub-rtr.entrypoints=websecure"
+      - "traefik.http.routers.hub-rtr.tls=true"
+      - "traefik.http.routers.hub-rtr.service=hub-svc"
       # Override the inherited middleware chain to DROP hub-alias-redirect: that
       # redirect is only correct for the standalone PATH deployment (canonical
       # /jupyterhub). Here base_url is / so the hub's own paths ARE /hub/* and the
       # redirect would 302 them to /jupyterhub/* -> 404. Host aliases serve
       # transparently at /, so only the rate limiter applies.
-      - "traefik.http.routers.duoptimum-hub-rtr.middlewares=duoptimum-hub-ratelimit"
-      - "traefik.http.services.duoptimum-hub-svc.loadbalancer.server.scheme=http"
-      - "traefik.http.services.duoptimum-hub-svc.loadbalancer.server.port=8000"
+      - "traefik.http.routers.hub-rtr.middlewares=hub-ratelimit"
+      - "traefik.http.services.hub-svc.loadbalancer.server.scheme=http"
+      - "traefik.http.services.hub-svc.loadbalancer.server.port=8000"
 
 # EOF
