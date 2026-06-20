@@ -15,6 +15,7 @@
 #
 # Set BASE_HOSTNAME and JUPYTERHUB_HOSTNAME_PREFIX in .env.
 # =============================================================================
+{%- set subs = jupyterhub_subdomain.split(',') | map('trim') | map('lower') | select | unique | list %}
 
 services:
 
@@ -26,7 +27,9 @@ services:
   traefik:
     command:
       # Entrypoints
+{%- if http_redirect %}
       - "--entrypoints.web.address=:80"
+{%- endif %}
       - "--entrypoints.websecure.address=:443"
       - "--entrypoints.websecure.http.tls=true"
 
@@ -47,16 +50,29 @@ services:
 
       # Logging
       - "--log.level=INFO"
+    # Publish HTTPS on the configured host port (container side stays 443).
+    # `!override` REPLACES the base ports list so only what we list is bound.
+    # Port 80 (fixed) is published only when the http->https redirect is kept.
+    ports: !override
+{%- if http_redirect %}
+      - "80:80"
+{%- endif %}
+      - "${TRAEFIK_HTTPS_PORT:-443}:443"
     labels:
       - "traefik.enable=true"
+{%- if http_redirect %}
 
-      # Global HTTP->HTTPS redirect
+      # Global HTTP->HTTPS redirect (web entrypoint :80 -> the secure port)
       - "traefik.http.routers.http-catchall.rule=HostRegexp(`.+`)"
       - "traefik.http.routers.http-catchall.entrypoints=web"
       - "traefik.http.routers.http-catchall.middlewares=redirect-to-https"
       - "traefik.http.routers.http-catchall.priority=1"
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
+{%- if traefik_https_port != 443 %}
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.port={{ traefik_https_port }}"
+{%- endif %}
+{%- endif %}
 
       # Dashboard: traefik.${BASE_HOSTNAME}
       - "traefik.http.routers.dashboard.rule=Host(`traefik.${BASE_HOSTNAME}`) || HostRegexp(`^traefik(\\..+)?\\.localhost$`)"
@@ -94,16 +110,16 @@ services:
       - "traefik.enable=true"
 
       # JupyterHub router. base_url is / here, so every accepted host serves the
-      # hub transparently at the root. In IP mode the subdomain prefix never
-      # applies to the IP itself (IPs can't carry subdomains), so route the bare
-      # IP plus the localhost subdomain via the regex. In DNS mode keep the
-      # standard subdomain.<base> routing. The hub|jupyterhub|duoptimum-hub
-      # subdomains are accepted as aliases (base_url is /, so every host serves
-      # transparently) - old URLs keep working.
+      # hub transparently at the root. The configured subdomain(s) are baked in
+      # at render time - one Host() matcher per subdomain, for `<sub>.<base>`
+      # (network) and `<sub>.localhost` (host machine). A comma-separated
+      # jupyterhub_subdomain renders multiple matchers; an empty value routes the
+      # bare host. In IP mode the bare IP is the root URL and subdomains apply
+      # only to the localhost side (IPs can't carry subdomains).
 {%- if network_addressing == 'ip' %}
-      - "traefik.http.routers.duoptimum-hub-rtr.rule=Host(`${BASE_HOSTNAME}`) || HostRegexp(`^(hub|jupyterhub|duoptimum-hub)\\.(.*\\.)?localhost$`) || HostRegexp(`^${JUPYTERHUB_HOSTNAME_PREFIX}(.*\\.)?localhost$`)"
+      - "traefik.http.routers.duoptimum-hub-rtr.rule=Host(`${BASE_HOSTNAME}`){% for s in subs %} || Host(`{{ s }}.localhost`){% endfor %}"
 {%- else %}
-      - "traefik.http.routers.duoptimum-hub-rtr.rule=Host(`${JUPYTERHUB_HOSTNAME_PREFIX}${BASE_HOSTNAME}`) || Host(`hub.${BASE_HOSTNAME}`) || Host(`jupyterhub.${BASE_HOSTNAME}`) || Host(`duoptimum-hub.${BASE_HOSTNAME}`) || HostRegexp(`^(hub|jupyterhub|duoptimum-hub)\\.(.*\\.)?localhost$`) || HostRegexp(`^${JUPYTERHUB_HOSTNAME_PREFIX}(.*\\.)?localhost$`)"
+      - "traefik.http.routers.duoptimum-hub-rtr.rule={% if subs %}{% for s in subs %}Host(`{{ s }}.${BASE_HOSTNAME}`){% if base_hostname != 'localhost' %} || Host(`{{ s }}.localhost`){% endif %}{% if not loop.last %} || {% endif %}{% endfor %}{% else %}Host(`${BASE_HOSTNAME}`){% if base_hostname != 'localhost' %} || Host(`localhost`){% endif %}{% endif %}"
 {%- endif %}
       - "traefik.http.routers.duoptimum-hub-rtr.entrypoints=websecure"
       - "traefik.http.routers.duoptimum-hub-rtr.tls=true"

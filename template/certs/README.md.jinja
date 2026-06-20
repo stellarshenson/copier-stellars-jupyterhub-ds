@@ -13,7 +13,8 @@ Rendered into `certs.params`:
 | `CERTS_DNS_ALTNAMES` | `{{ cert_dns_altnames }}` |
 | Network addressing | `{{ network_addressing }}` ({% if network_addressing == 'dns' %}DNS hostname; subdomain routing supported{% else %}bare IP; subdomain only applies to localhost-side access{% endif %}) |
 | Base hostname | `{{ base_hostname }}` |
-| JupyterHub subdomain | `{{ jupyterhub_subdomain or '(empty - root host)' }}` |
+{% set subs = jupyterhub_subdomain.split(',') | map('trim') | map('lower') | select | unique | list -%}
+| JupyterHub subdomain(s) | `{{ subs | join(', ') if subs else '(empty - root host)' }}` |
 
 The cert covers each SAN entry **exactly** — no wildcards. Each URL the deployment exposes is enumerated. To add or change SANs, edit `certs.params` and re-run cert generation (see below).
 

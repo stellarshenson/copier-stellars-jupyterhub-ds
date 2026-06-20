@@ -10,87 +10,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  render:
+  test:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        scenario:
-          - name: defaults
-            data: ""
-            env:
-              EXPECTED_PROJECT_NAME: My JupyterHub
-              EXPECTED_PROJECT_SLUG: my-jupyterhub
-              EXPECTED_BRANDING_PREFIX: my_jupyterhub
-              EXPECTED_BASE_HOSTNAME: localhost
-              EXPECTED_NETWORK_ADDRESSING: dns
-              EXPECTED_ADMIN_USERNAME: admin
-              EXPECTED_SIGNUP_ENABLED: "0"
-              EXPECTED_CIFS_ENABLED: "false"
-              EXPECTED_CERT_CN: MY JUPYTERHUB Certificate
-              EXPECTED_CERT_SANS: "jupyterhub.localhost,localhost,traefik.localhost"
-              EXPECTED_CERT_PREFIX: jupyterhub.localhost
-
-          - name: custom-branding
-            data: '--data project_name="ACME AI Lab" --data base_hostname=lab.acme.example'
-            env:
-              EXPECTED_PROJECT_NAME: ACME AI Lab
-              EXPECTED_PROJECT_SLUG: acme-ai-lab
-              EXPECTED_BRANDING_PREFIX: acme_ai_lab
-              EXPECTED_BASE_HOSTNAME: lab.acme.example
-              EXPECTED_NETWORK_ADDRESSING: dns
-              EXPECTED_ADMIN_USERNAME: admin
-              EXPECTED_SIGNUP_ENABLED: "0"
-              EXPECTED_CIFS_ENABLED: "false"
-              EXPECTED_CERT_CN: ACME AI LAB Certificate
-              EXPECTED_CERT_SANS: "jupyterhub.lab.acme.example,lab.acme.example,traefik.lab.acme.example,jupyterhub.localhost,localhost,traefik.localhost"
-              EXPECTED_CERT_PREFIX: jupyterhub.lab.acme.example
-
-          - name: with-cifs
-            data: "--data cifs_shared_mount=true"
-            env:
-              EXPECTED_PROJECT_NAME: My JupyterHub
-              EXPECTED_PROJECT_SLUG: my-jupyterhub
-              EXPECTED_BRANDING_PREFIX: my_jupyterhub
-              EXPECTED_BASE_HOSTNAME: localhost
-              EXPECTED_NETWORK_ADDRESSING: dns
-              EXPECTED_ADMIN_USERNAME: admin
-              EXPECTED_SIGNUP_ENABLED: "0"
-              EXPECTED_CIFS_ENABLED: "true"
-              EXPECTED_CERT_CN: MY JUPYTERHUB Certificate
-              EXPECTED_CERT_SANS: "jupyterhub.localhost,localhost,traefik.localhost"
-              EXPECTED_CERT_PREFIX: jupyterhub.localhost
-
-          - name: ip-host
-            data: "--data network_addressing=ip --data base_hostname=192.168.1.50"
-            env:
-              EXPECTED_PROJECT_NAME: My JupyterHub
-              EXPECTED_PROJECT_SLUG: my-jupyterhub
-              EXPECTED_BRANDING_PREFIX: my_jupyterhub
-              EXPECTED_BASE_HOSTNAME: 192.168.1.50
-              EXPECTED_NETWORK_ADDRESSING: ip
-              EXPECTED_ADMIN_USERNAME: admin
-              EXPECTED_SIGNUP_ENABLED: "0"
-              EXPECTED_CIFS_ENABLED: "false"
-              EXPECTED_CERT_CN: MY JUPYTERHUB Certificate
-              EXPECTED_CERT_SANS: "192.168.1.50,jupyterhub.localhost,localhost,traefik.localhost"
-              EXPECTED_CERT_PREFIX: "192.168.1.50"
-
-          - name: signup-on
-            data: "--data signup_enabled=true --data admin_username=alice"
-            env:
-              EXPECTED_PROJECT_NAME: My JupyterHub
-              EXPECTED_PROJECT_SLUG: my-jupyterhub
-              EXPECTED_BRANDING_PREFIX: my_jupyterhub
-              EXPECTED_BASE_HOSTNAME: localhost
-              EXPECTED_NETWORK_ADDRESSING: dns
-              EXPECTED_ADMIN_USERNAME: alice
-              EXPECTED_SIGNUP_ENABLED: "1"
-              EXPECTED_CIFS_ENABLED: "false"
-              EXPECTED_CERT_CN: MY JUPYTERHUB Certificate
-              EXPECTED_CERT_SANS: "jupyterhub.localhost,localhost,traefik.localhost"
-              EXPECTED_CERT_PREFIX: jupyterhub.localhost
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -100,38 +21,8 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install copier
-        run: pip install copier
+      - name: Install test dependencies
+        run: pip install ".[test]"
 
-      - name: Render template (${{ matrix.scenario.name }})
-        run: |
-          rm -rf /tmp/render
-          copier copy --trust --defaults ${{ matrix.scenario.data }} . /tmp/render
-
-      - name: Run integration assertions
-        env:
-          EXPECTED_PROJECT_NAME: ${{ matrix.scenario.env.EXPECTED_PROJECT_NAME }}
-          EXPECTED_PROJECT_SLUG: ${{ matrix.scenario.env.EXPECTED_PROJECT_SLUG }}
-          EXPECTED_BRANDING_PREFIX: ${{ matrix.scenario.env.EXPECTED_BRANDING_PREFIX }}
-          EXPECTED_BASE_HOSTNAME: ${{ matrix.scenario.env.EXPECTED_BASE_HOSTNAME }}
-          EXPECTED_NETWORK_ADDRESSING: ${{ matrix.scenario.env.EXPECTED_NETWORK_ADDRESSING }}
-          EXPECTED_ADMIN_USERNAME: ${{ matrix.scenario.env.EXPECTED_ADMIN_USERNAME }}
-          EXPECTED_SIGNUP_ENABLED: ${{ matrix.scenario.env.EXPECTED_SIGNUP_ENABLED }}
-          EXPECTED_CIFS_ENABLED: ${{ matrix.scenario.env.EXPECTED_CIFS_ENABLED }}
-          EXPECTED_CERT_CN: ${{ matrix.scenario.env.EXPECTED_CERT_CN }}
-          EXPECTED_CERT_SANS: ${{ matrix.scenario.env.EXPECTED_CERT_SANS }}
-          EXPECTED_CERT_PREFIX: ${{ matrix.scenario.env.EXPECTED_CERT_PREFIX }}
-        run: bash tests/test_render.sh /tmp/render
-
-      - name: Assert idempotent re-render (existing cert is preserved)
-        run: |
-          original_mtime=$(stat -c %Y /tmp/render/certs/certs.yml)
-          copier copy --trust --defaults --overwrite ${{ matrix.scenario.data }} "$GITHUB_WORKSPACE" /tmp/render
-          new_mtime=$(stat -c %Y /tmp/render/certs/certs.yml)
-          test "$original_mtime" = "$new_mtime" \
-            && echo "OK: cert mtime unchanged across re-render" \
-            || (echo "FAIL: cert was regenerated despite already existing" && exit 1)
-
-      - name: Operator-replacement branding cleanup
-        if: matrix.scenario.name == 'defaults'
-        run: bash tests/test_operator_branding.sh "$GITHUB_WORKSPACE" /tmp/operator-render
+      - name: Run pytest
+        run: pytest -v

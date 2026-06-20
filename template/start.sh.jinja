@@ -86,4 +86,4 @@ fi
 echo "Starting {{ project_name }} platform..."
 docker compose ${COMPOSE_FILES} up -d --no-build
 
-echo "Done. Access: https://${JUPYTERHUB_HOSTNAME_PREFIX:-{% if jupyterhub_subdomain %}{{ jupyterhub_subdomain }}.{% endif %}}${BASE_HOSTNAME:-{{ base_hostname }}}/"
+echo "Done. Access: https://${JUPYTERHUB_HOSTNAME_PREFIX:-{% set subs = jupyterhub_subdomain.split(',') | map('trim') | map('lower') | select | unique | list %}{% if subs %}{{ subs[0] }}.{% endif %}}${BASE_HOSTNAME:-{{ base_hostname }}}/"

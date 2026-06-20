@@ -10,37 +10,43 @@ Local deployment overlay of [stellars-jupyterhub-ds](https://github.com/stellars
 
 ## Access
 
+{% set subs = jupyterhub_subdomain.split(',') | map('trim') | map('lower') | select | unique | list %}{% set port_sfx = ':' ~ traefik_https_port if traefik_https_port != 443 else '' -%}
 Configuration:
 
 - Network addressing: `{{ network_addressing }}` ({% if network_addressing == 'dns' %}DNS hostname{% else %}bare IP{% endif %})
 - `BASE_HOSTNAME={{ base_hostname }}`
-- `JUPYTERHUB_HOSTNAME_PREFIX={% if jupyterhub_subdomain %}{{ jupyterhub_subdomain }}.{% endif %}`
+- `JUPYTERHUB_HOSTNAME_PREFIX={% if subs %}{{ subs[0] }}.{% endif %}` (primary subdomain)
+- Routed subdomains: {{ subs | join(', ') if subs else '(none - root host)' }}
+- Traefik HTTPS port: `{{ traefik_https_port }}`{% if traefik_https_port != 443 %} (non-default; standard is 443){% endif %}
+- HTTP redirect (:80 -> HTTPS): {{ 'enabled' if http_redirect else 'disabled' }}
 
 URLs you can hit (all use the bundled self-signed cert; covered SANs are listed in `certs/certs.params`):
 
 | URL | Reachable from | Purpose |
 |---|---|---|
 {% if network_addressing == 'dns' -%}
-{% if jupyterhub_subdomain -%}
-| `https://{{ jupyterhub_subdomain }}.{{ base_hostname }}/` | clients on the network | JupyterHub (configured access) |
+{% if subs -%}
+{% for s in subs -%}
+| `https://{{ s }}.{{ base_hostname }}{{ port_sfx }}/` | clients on the network | JupyterHub{% if loop.first %} (primary){% endif %} |
+{% endfor -%}
 {% else -%}
-| `https://{{ base_hostname }}/` | clients on the network | JupyterHub (configured access at root) |
+| `https://{{ base_hostname }}{{ port_sfx }}/` | clients on the network | JupyterHub (configured access at root) |
 {% endif -%}
-| `https://traefik.{{ base_hostname }}/` | clients on the network | Traefik dashboard |
+| `https://traefik.{{ base_hostname }}{{ port_sfx }}/` | clients on the network | Traefik dashboard |
 {% if base_hostname != 'localhost' -%}
-{% if jupyterhub_subdomain -%}
-| `https://{{ jupyterhub_subdomain }}.localhost/` | host machine only | JupyterHub via localhost |
-{% endif -%}
-| `https://localhost/` | host machine only | bare localhost root |
-| `https://traefik.localhost/` | host machine only | Traefik dashboard via localhost |
+{% for s in subs -%}
+| `https://{{ s }}.localhost{{ port_sfx }}/` | host machine only | JupyterHub via localhost |
+{% endfor -%}
+| `https://localhost{{ port_sfx }}/` | host machine only | bare localhost root |
+| `https://traefik.localhost{{ port_sfx }}/` | host machine only | Traefik dashboard via localhost |
 {% endif -%}
 {% else -%}
-| `https://{{ base_hostname }}/` | clients on the network | JupyterHub (configured access at root - IP can't carry subdomain) |
-{% if jupyterhub_subdomain -%}
-| `https://{{ jupyterhub_subdomain }}.localhost/` | host machine only | JupyterHub via localhost subdomain |
-{% endif -%}
-| `https://localhost/` | host machine only | bare localhost root |
-| `https://traefik.localhost/` | host machine only | Traefik dashboard via localhost |
+| `https://{{ base_hostname }}{{ port_sfx }}/` | clients on the network | JupyterHub (configured access at root - IP can't carry subdomain) |
+{% for s in subs -%}
+| `https://{{ s }}.localhost{{ port_sfx }}/` | host machine only | JupyterHub via localhost subdomain |
+{% endfor -%}
+| `https://localhost{{ port_sfx }}/` | host machine only | bare localhost root |
+| `https://traefik.localhost{{ port_sfx }}/` | host machine only | Traefik dashboard via localhost |
 {% endif %}
 
 Override the env values via `.env` (untracked) if you need to change the routing without re-running copier.{% if network_addressing == 'ip' %} Subdomain URLs of the IP itself (`https://X.{{ base_hostname }}/`) cannot work — IPs have no DNS subdomains.{% endif %}
@@ -131,7 +137,7 @@ copier update --trust
 
 The first admin user is created in one of two modes. Both honour `JUPYTERHUB_ADMIN={{ admin_username }}` and never auto-create the admin with an unrecoverable random password.
 
-**Self-signup (default)** - leave `JUPYTERHUB_ADMIN_PASSWORD` unset. On a fresh deployment with empty database, the signup form is silently re-opened scoped to `{{ admin_username }}` only. Visit `https://{% if jupyterhub_subdomain %}{{ jupyterhub_subdomain }}.{% endif %}{{ base_hostname }}/hub/signup`, register as `{{ admin_username }}` with a password you choose, and log in. NativeAuthenticator self-approves that signup and the admin role is granted at login. Any other username on the signup form is rejected. Once the admin exists in the database, the bootstrap window closes.
+**Self-signup (default)** - leave `JUPYTERHUB_ADMIN_PASSWORD` unset. On a fresh deployment with empty database, the signup form is silently re-opened scoped to `{{ admin_username }}` only. Visit `https://{% if subs %}{{ subs[0] }}.{% endif %}{{ base_hostname }}/hub/signup`, register as `{{ admin_username }}` with a password you choose, and log in. NativeAuthenticator self-approves that signup and the admin role is granted at login. Any other username on the signup form is rejected. Once the admin exists in the database, the bootstrap window closes.
 
 **Provisioned** - set `JUPYTERHUB_ADMIN_PASSWORD` in `compose_override.yml`:
 

@@ -77,13 +77,15 @@ _message_after_copy: |2
     │  Project slug           {{ project_slug }}
     │  Branding prefix        {{ branding_prefix }}
     ├─ Access
-    │  URL                    https://{% if jupyterhub_subdomain %}{{ jupyterhub_subdomain }}.{% endif %}{{ base_hostname }}/
+    │  URL                    https://{% set subs = jupyterhub_subdomain.split(',') | map('trim') | map('lower') | select | unique | list %}{% set port_sfx = ':' ~ traefik_https_port if traefik_https_port != 443 else '' %}{% if subs %}{{ subs[0] }}.{% endif %}{{ base_hostname }}{{ port_sfx }}/
+    │  HTTPS port             {{ traefik_https_port }}{% if traefik_https_port != 443 %}  (non-default; 443 is standard){% endif %}
+    │  HTTP redirect          {{ 'enabled (:80 -> HTTPS)' if http_redirect else 'disabled (HTTPS only)' }}
     │  Admin username         {{ admin_username }}
     │  Self-registration      {{ 'enabled' if signup_enabled else 'disabled (admin bootstrap window opens on fresh DB)' }}
     ├─ Networking
     │  Addressing             {{ network_addressing }}{% if network_addressing == 'ip' %}  (subdomain URLs not supported for IPs - see note below){% endif %}
     │  Base hostname          {{ base_hostname }}
-    │  Subdomain              {{ jupyterhub_subdomain or '(root domain)' }}
+    │  Subdomain              {{ subs | join(', ') if subs else '(root domain)' }}{% if subs | length > 1 %}  (first is primary){% endif %}
     ├─ TLS  (self-signed; bundled local reverse proxy)
     │  Cert CN                {{ cert_common_name }}
     │  Cert DNS altnames      {{ cert_dns_altnames }}
@@ -106,14 +108,14 @@ _message_after_copy: |2
       cd {{ _copier_conf.dst_path }}
       ./start.sh
 
-    Then open https://{% if jupyterhub_subdomain %}{{ jupyterhub_subdomain }}.{% endif %}{{ base_hostname }}/
+    Then open https://{% if subs %}{{ subs[0] }}.{% endif %}{{ base_hostname }}{{ port_sfx }}/
     and complete the admin bootstrap (sign up as '{{ admin_username }}').
     {%- if network_addressing == 'ip' %}
 
     Note: subdomain URLs (https://X.{{ base_hostname }}/) won't work because IP
     addresses don't have DNS subdomains. Use https://{{ base_hostname }}/ to reach
     the platform. Local subdomain access still works on the host machine via
-    https://{% if jupyterhub_subdomain %}{{ jupyterhub_subdomain }}.{% endif %}localhost/ since *.localhost is always included in the cert.
+    https://{% if subs %}{{ subs[0] }}.{% endif %}localhost{{ port_sfx }}/ since the localhost-side names are included in the cert SANs.
     {%- endif %}
 
 # ── Identity ─────────────────────────────────────────────────────────────────
@@ -167,11 +169,25 @@ jupyterhub_subdomain:
   type: str
   help: |-
     {% if network_addressing == 'dns' -%}
-    Subdomain prefix for the JupyterHub service (e.g. https://hub.<base_hostname>/). Leave empty to serve at the root host. No trailing dot; copier adds it where needed.
+    Subdomain or comma-separated list (e.g. `hub` or `hub, jupyterhub`). Each is routed and added to the cert. First is primary. Case/spaces normalized. Empty = root host.
     {%- else -%}
-    Subdomain prefix used ONLY for localhost access on the host machine (e.g. https://hub.localhost/). The IP itself is always the root URL (https://<ip>/) since IPs can't carry subdomains. Leave empty to skip the localhost-subdomain shortcut entirely.
+    Localhost-only subdomain(s) for the host machine (e.g. `hub` -> https://hub.localhost/). One or comma-separated list. The IP stays the root URL. First is primary. Empty = skip.
     {%- endif %}
   default: hub
+
+traefik_https_port:
+  type: int
+  help: "Host port for HTTPS (container stays 443). 443 standard; 8443 common when 443 is taken."
+  default: 443
+  validator: >-
+    {% if traefik_https_port < 1 or traefik_https_port > 65535 %}
+    Port must be between 1 and 65535.
+    {% endif %}
+
+http_redirect:
+  type: bool
+  help: "Publish port 80 and redirect it to HTTPS (80 is fixed). Disable if 80 is taken or you want HTTPS only."
+  default: true
 
 # ── TLS ──────────────────────────────────────────────────────────────────────
 cert_common_name:
@@ -182,7 +198,7 @@ cert_common_name:
 cert_dns_altnames:
   type: str
   help: "Cert SANs (comma-separated). Default enumerates the configured access URL, the Traefik dashboard subdomain, and the localhost-side equivalents so the host machine can reach the deployment. Edit to add or remove names."
-  default: "{% if network_addressing == 'ip' %}{{ base_hostname }},{% if jupyterhub_subdomain %}{{ jupyterhub_subdomain }}.localhost,{% endif %}localhost,traefik.localhost{% elif base_hostname == 'localhost' %}{% if jupyterhub_subdomain %}{{ jupyterhub_subdomain }}.localhost,{% endif %}localhost,traefik.localhost{% else %}{% if jupyterhub_subdomain %}{{ jupyterhub_subdomain }}.{{ base_hostname }},{% endif %}{{ base_hostname }},traefik.{{ base_hostname }},{% if jupyterhub_subdomain %}{{ jupyterhub_subdomain }}.localhost,{% endif %}localhost,traefik.localhost{% endif %}"
+  default: "{% set subs = jupyterhub_subdomain.split(',') | map('trim') | map('lower') | select | unique | list %}{% set sub_local = subs | map('regex_replace', '$', '.localhost') | list %}{% if network_addressing == 'ip' %}{{ ([base_hostname] + sub_local + ['localhost', 'traefik.localhost']) | unique | join(',') }}{% elif base_hostname == 'localhost' %}{{ (sub_local + ['localhost', 'traefik.localhost']) | unique | join(',') }}{% else %}{% set sub_base = subs | map('regex_replace', '$', '.' ~ base_hostname) | list %}{{ (sub_base + [base_hostname, 'traefik.' ~ base_hostname] + sub_local + ['localhost', 'traefik.localhost']) | unique | join(',') }}{% endif %}"
 
 # ── Authentication ───────────────────────────────────────────────────────────
 admin_username:
