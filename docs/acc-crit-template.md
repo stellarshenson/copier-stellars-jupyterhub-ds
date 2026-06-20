@@ -64,8 +64,9 @@ Copier template that scaffolds a thin deployment overlay for the upstream stella
   - log: 2026-06-20 back-ported from live deployment (v2.0.0)
 - [x] **Dashboard toggle** - `--api.dashboard=${TRAEFIK_DASHBOARD_ENABLED:-true}`; host-routed (no basePath) so `false` 404s both UI and API; open by default
   - log: 2026-06-20 back-ported from live deployment (v2.0.0)
-- [x] **Hub name** - `JUPYTERHUB_HUB_NAME={{ project_name }}` sets the portal brand-icon tooltip + login/signup text (else upstream default)
+- [x] **Hub name** - `JUPYTERHUB_BRANDING_HUB_NAME={{ project_name }}` sets the portal brand-icon tooltip + login/signup text (else upstream default)
   - log: 2026-06-20 back-ported from live deployment (v2.0.0)
+  - log: 2026-06-21 fixed `JUPYTERHUB_HUB_NAME` -> `JUPYTERHUB_BRANDING_HUB_NAME`; upstream `jupyterhub_config.py` reads only the `BRANDING_` key, so the old name silently fell back to the default (adversarial sweep)
 - [x] **Splash icon** - `JUPYTERHUB_BRANDING_LAB_SPLASH_ICON_URI` set to `{{ branding_prefix }}_jl_logo.svg` (matches main lab icon)
   - log: 2026-06-21 added to track upstream new branding key
 - [x] **No watchtower/networks block** - override declares no watchtower service and no top-level networks block

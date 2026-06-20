@@ -129,3 +129,9 @@ This journal tracks substantive work on documents, diagrams, and documentation c
 
 42. **Task - Release v2.0.2** (v2.0.2): bump patch version<br>
     **Result**: incremented 2.0.1 -> 2.0.2, committed, tagged v2.0.2, pushed branch and tag to origin.
+
+43. **Task - Reconcile override env keys to upstream branding schema** (v2.0.3): an adversarial sweep over the hub-schema sync caught the override setting branding env keys the hub never reads<br>
+    **Result**: Upstream `jupyterhub_config.py` reads only `JUPYTERHUB_BRANDING_HUB_NAME` and `JUPYTERHUB_BRANDING_LAB_NAME`; the override set `JUPYTERHUB_HUB_NAME` (so the brand name silently fell back to the default) plus `JUPYTERLAB_SYSTEM_NAME` and a dead `JUPYTERLAB_HEADER_CAPITALIZE_SYSTEM_NAME` - the hub injects `JUPYTERLAB_SYSTEM_NAME` into labs from the `BRANDING_LAB_NAME` knob, so setting it on the hub is a no-op. Renamed to the `BRANDING_` keys, dropped CAPITALIZE; fixed `template/compose_override.yml.jinja`, `README.md.jinja`, `tests/test_template.py`, `docs/acc-crit-template.md`, and the live `../compose_override.yml`. Verified with a two-round adversarial-architect sweep (codebase + rendered output) against base + upstream - both CLEAN; 70 pytest pass; `docker compose config` merge of base+override exits 0 with the brand vars resolving.
+
+44. **Task - Release v2.0.3** (v2.0.3): bump patch version<br>
+    **Result**: incremented 2.0.2 -> 2.0.3, committed, tagged v2.0.3, pushed branch and tag to origin.

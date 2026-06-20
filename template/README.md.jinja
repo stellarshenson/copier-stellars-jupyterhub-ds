@@ -162,11 +162,13 @@ Add users at `/hub/admin`. Grants OR-accumulate across groups. Group names arbit
 
 The `branding/` directory is mounted read-only at `/srv/branding` in the JupyterHub container. The compose override sets:
 
+- `JUPYTERHUB_BRANDING_HUB_NAME={{ project_name }}` - portal hub display name (brand-icon tooltip + login/signup text)
 - `JUPYTERHUB_BRANDING_STAGE=` - environment-stage header badge (DEV/STG/TST/PRD or custom text); empty = no badge
 - `JUPYTERHUB_BRANDING_LOGO_URI=file:///srv/branding/{{ branding_prefix }}_jh_logo.png` - login page lockup
 - `JUPYTERHUB_BRANDING_FAVICON_URI=file:///srv/branding/{{ branding_prefix }}_favicon.ico` - browser tab
 - `JUPYTERHUB_BRANDING_LAB_MAIN_ICON_URI=file:///srv/branding/{{ branding_prefix }}_jl_logo.svg` - JupyterLab top bar
-- `JUPYTERLAB_SYSTEM_NAME={{ project_name }}` - displayed system name
+- `JUPYTERHUB_BRANDING_LAB_SPLASH_ICON_URI=file:///srv/branding/{{ branding_prefix }}_jl_logo.svg` - JupyterLab splash icon
+- `JUPYTERHUB_BRANDING_LAB_NAME={{ project_name }}` - lab display name (header/welcome/MOTD); the hub injects it into spawned labs as `JUPYTERLAB_SYSTEM_NAME`
 
 To rebrand: drop replacement files at the same paths.
 

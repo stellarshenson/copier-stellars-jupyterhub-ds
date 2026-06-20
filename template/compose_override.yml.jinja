@@ -105,14 +105,13 @@ services:
       - JUPYTERHUB_TIMEZONE={{ timezone }} # timezone for hub and lab
 
       # branding ({{ project_name }})
-      - JUPYTERHUB_HUB_NAME={{ project_name }} # portal brand-icon tooltip + login/signup text (else upstream default)
+      - JUPYTERHUB_BRANDING_HUB_NAME={{ project_name }} # portal brand-icon tooltip + login/signup text (else upstream default)
       - JUPYTERHUB_BRANDING_STAGE= # environment-stage header badge: DEV/STG/TST/PRD or custom text; empty = no badge
       - JUPYTERHUB_BRANDING_LOGO_URI=file:///srv/branding/{{ branding_prefix }}_jh_logo.png
       - JUPYTERHUB_BRANDING_FAVICON_URI=file:///srv/branding/{{ branding_prefix }}_favicon.ico
       - JUPYTERHUB_BRANDING_LAB_MAIN_ICON_URI=file:///srv/branding/{{ branding_prefix }}_jl_logo.svg
       - JUPYTERHUB_BRANDING_LAB_SPLASH_ICON_URI=file:///srv/branding/{{ branding_prefix }}_jl_logo.svg
-      - JUPYTERLAB_SYSTEM_NAME={{ project_name }}
-      - JUPYTERLAB_HEADER_CAPITALIZE_SYSTEM_NAME=1
+      - JUPYTERHUB_BRANDING_LAB_NAME={{ project_name }} # lab display name; hub injects it into spawned labs as JUPYTERLAB_SYSTEM_NAME (header/welcome/MOTD)
     volumes:
       - ./branding:/srv/branding:ro
     labels:

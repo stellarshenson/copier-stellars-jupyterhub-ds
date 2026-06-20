@@ -115,7 +115,7 @@ def override(render_dir):
 
 def hub_rule(render_dir):
     for line in override(render_dir).splitlines():
-        if "duoptimum-hub-rtr.rule=" in line:
+        if "hub-rtr.rule=" in line:
             return line
     raise AssertionError("hub router rule not found in compose_override.yml")
 
@@ -180,7 +180,7 @@ def test_branding(rendered):
 def test_compose_identity(rendered):
     d, sc = rendered
     text = override(d)
-    assert f"JUPYTERLAB_SYSTEM_NAME={sc['project_name']}" in text
+    assert f"JUPYTERHUB_BRANDING_LAB_NAME={sc['project_name']}" in text
     assert f"JUPYTERHUB_ADMIN={sc['admin_username']}" in text
     assert "JUPYTERHUB_ADMIN_PASSWORD=${JUPYTERHUB_ADMIN_PASSWORD:-}" in text
     assert f"JUPYTERHUB_SIGNUP_ENABLED={sc['signup_enabled']}" in text
